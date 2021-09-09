@@ -44,7 +44,7 @@ The emulator in this project is close to complete, including:
 - Implementation of binary coded decimal (`DAA`)
 - Interruptions (`EI` and `SI` and some `RST` but not all since Space Invaders only uses a few)
 
-The emulator also passes the `cpudiag` diagnostic listing, which you can run with `cargo test`.
+The emulator also passes the `cpudiag` diagnostic application, which you can run with `cargo test`.
 
 ## Space Invaders
 
