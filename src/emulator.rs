@@ -5,14 +5,6 @@ use crate::state::*;
 use crate::emulator::StepStatus::Continue;
 use std::borrow::BorrowMut;
 
-pub struct Emulator<'a> {
-    memory: Box<Memory<'a>>,
-    state: Option<State>,
-    shift_register: u16,
-    shift_register_offset: u8,
-    output_buffer: Vec<char>,
-}
-
 #[derive(PartialEq)]
 pub enum StepStatus {
     Continue,
@@ -24,6 +16,14 @@ pub enum StepStatus {
 pub struct StepResult {
     pub status: StepStatus,
     pub cycles: u8,
+}
+
+pub struct Emulator<'a> {
+    memory: Box<Memory<'a>>,
+    state: Option<State>,
+    shift_register: u16,
+    shift_register_offset: u8,
+    output_buffer: Vec<char>,
 }
 
 impl Emulator<'_> {
