@@ -87,10 +87,6 @@ impl<'a> Memory<'a> {
      */
     pub(crate) fn write(&mut self, address: usize, value: u8) {
         STATIC_MEMORY.write().unwrap()[address] = value;
-
-        if self.listener.is_some() && (0x2400..(0x2400 + GRAPHIC_MEMORY_SIZE)).contains(&address) {
-            self.listener.unwrap().lock().unwrap().on_draw(address - 0x2400, value);
-        }
         if self.verbose {
             println!("    mem[{:04x}={:02X}]", address, value    );
         }

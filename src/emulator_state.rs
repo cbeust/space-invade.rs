@@ -26,14 +26,6 @@ impl EmulatorState {
 }
 
 impl Listener for EmulatorState {
-    fn on_draw(&mut self, address: usize, value: u8) {
-        #[cfg(feature = "debug_checks")]
-        if ! (0..GRAPHIC_MEMORY_SIZE).contains(&address) {
-            panic!("ILLEGAL GRAPHIC MEMORY ADDRESS: {:04x}", address);
-        }
-        self.buffer[address] = value;
-    }
-
     fn set_vbl(&mut self, value: bool) {
         self.display = value;
     }
