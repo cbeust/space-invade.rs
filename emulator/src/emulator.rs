@@ -2,8 +2,6 @@ use crate::{opcodes, VERBOSE_DISASSEMBLE, VERBOSE_DISASSEMBLE_SECTION, DISASSEMB
 use crate::opcodes::*;
 use crate::memory::Memory;
 use crate::state::*;
-use crate::emulator::StepStatus::Continue;
-use std::borrow::BorrowMut;
 
 #[derive(PartialEq)]
 pub enum StepStatus {
