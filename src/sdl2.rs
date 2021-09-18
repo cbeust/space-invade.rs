@@ -3,7 +3,7 @@ use sdl2::event::Event;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use crate::memory::Memory;
+use crate::memory::{Memory, STATIC_MEMORY};
 use std::thread;
 use std::sync::Mutex;
 use crate::emulator::Emulator;
@@ -185,7 +185,7 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
         let mut i: usize = 0;
         for ix in 0..Emulator::WIDTH {
             for iy in (0..Emulator::HEIGHT).step_by(8) {
-                let mut byte = listener.lock().unwrap().byte_color(i);
+                let mut byte = STATIC_MEMORY.read().unwrap()[i + 0x2400];
                 i += 1;
                 for b in 0..8 {
                     let x: i32 = ix as i32 * RECTANGLE_SIZE as i32;

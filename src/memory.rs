@@ -2,10 +2,11 @@ use std::fs::File;
 use std::io::Read;
 use crate::state::State;
 use crate::opcodes::Opcode;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock};
 use crate::listener::Listener;
+use lazy_static::lazy_static;
 
-const MEMORY_SIZE: usize = 0x20000;
+const MEMORY_SIZE: usize = 0x4000;
 pub const SCREEN_WIDTH: usize = 0x20;  // 0x20 bytes (256 pixels)
 pub const SCREEN_HEIGHT: usize = 0xe0;
 pub const GRAPHIC_MEMORY_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT;
@@ -16,8 +17,13 @@ pub trait GraphicRenderer: Send {
     fn display(&self);
 }
 
+static _STATIC_MEMORY: [u8; MEMORY_SIZE] = [0; MEMORY_SIZE];
+
+lazy_static! {
+    pub(crate) static ref STATIC_MEMORY: RwLock<[u8; MEMORY_SIZE]> = RwLock::new(_STATIC_MEMORY);
+}
+
 pub struct Memory<'a> {
-    memory: [u8; MEMORY_SIZE],
     pub verbose: bool,
     pub listener: Option<&'a Mutex<dyn Listener>>,
 }
@@ -25,7 +31,6 @@ pub struct Memory<'a> {
 impl<'a> Memory<'a> {
     pub(crate) fn new(listener: Option<&'a Mutex<dyn Listener>>) -> Self {
         Memory {
-            memory: [0; MEMORY_SIZE],
             verbose: false,
             listener,
         }
@@ -81,24 +86,27 @@ impl<'a> Memory<'a> {
     }
      */
     pub(crate) fn write(&mut self, address: usize, value: u8) {
+        STATIC_MEMORY.write().unwrap()[address] = value;
+
         if self.listener.is_some() && (0x2400..(0x2400 + GRAPHIC_MEMORY_SIZE)).contains(&address) {
             self.listener.unwrap().lock().unwrap().on_draw(address - 0x2400, value);
         }
         if self.verbose {
             println!("    mem[{:04x}={:02X}]", address, value    );
         }
-        self.memory[address] = value;
     }
 
     pub(crate) fn read(&self, i: usize) -> u8 {
-        self.memory[i]
+        STATIC_MEMORY.read().unwrap()[i]
     }
 
-    pub(crate) fn read_word(&self, b0: u8, b1: u8) -> u8 { self.memory[Memory::to_word(b0, b1)] }
+    pub(crate) fn read_word(&self, b0: u8, b1: u8) -> u8 {
+        STATIC_MEMORY.read().unwrap()[Memory::to_word(b0, b1)]
+    }
 
     pub(crate) fn write_word(&mut self, b0: u8, b1: u8, value: u8) {
         let address = Memory::to_word(b0, b1);
-        self.memory[address] = value;
+        STATIC_MEMORY.write().unwrap()[address] = value;
     }
 
     // pub(crate) fn disassemble_instructions(&self, start: usize, instruction_count: u16) {
