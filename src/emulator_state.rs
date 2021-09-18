@@ -1,9 +1,8 @@
 use crate::memory;
-use crate::memory::GRAPHIC_MEMORY_SIZE;
 use crate::listener::Listener;
+use crate::memory::GRAPHIC_MEMORY_SIZE;
 
 pub struct EmulatorState {
-    buffer: [u8; memory::GRAPHIC_MEMORY_SIZE],
     display: bool,
     megahertz: f64,
     in_1: u8,
@@ -15,7 +14,6 @@ pub struct EmulatorState {
 impl EmulatorState {
     pub(crate) fn new() -> EmulatorState {
         EmulatorState {
-            buffer: [0; memory::GRAPHIC_MEMORY_SIZE],
             display: false,
             megahertz: 2.0,
             in_1: 8,   // bit 3 is always 1
@@ -26,18 +24,18 @@ impl EmulatorState {
 }
 
 impl Listener for EmulatorState {
+    fn graphic_memory(&self) -> [u8; GRAPHIC_MEMORY_SIZE] {
+        let mut result: [u8; GRAPHIC_MEMORY_SIZE] = [0; GRAPHIC_MEMORY_SIZE];
+        let memory = memory::STATIC_MEMORY.read().unwrap();
+        result.clone_from_slice(&memory[0x2400..0x2400 + GRAPHIC_MEMORY_SIZE]);
+        result
+    }
+
     fn set_vbl(&mut self, value: bool) {
         self.display = value;
     }
 
     fn is_vbl(&self) -> bool { self.display }
-
-    fn byte_color(&self, address: usize) -> u8 {
-        if address >= GRAPHIC_MEMORY_SIZE {
-            panic!("BEYOND GRAPHIC MEMORY");
-        }
-        self.buffer[address]
-    }
 
     fn set_megahertz(&mut self, mhz: f64) {
         self.megahertz = mhz;
