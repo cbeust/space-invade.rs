@@ -21,6 +21,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "emulator"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "log",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -68,8 +76,8 @@ dependencies = [
 name = "space-invaders"
 version = "0.1.0"
 dependencies = [
+ "emulator",
  "lazy_static",
- "log",
  "sdl2",
 ]
 

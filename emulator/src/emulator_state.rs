@@ -12,7 +12,7 @@ pub struct EmulatorState {
 }
 
 impl EmulatorState {
-    pub(crate) fn new() -> EmulatorState {
+    pub fn new() -> EmulatorState {
         EmulatorState {
             display: false,
             megahertz: 2.0,

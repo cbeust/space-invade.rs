@@ -30,7 +30,7 @@ impl Emulator<'_> {
     pub const WIDTH: u16 = 224;
     pub const HEIGHT: u16 = 256;
 
-    pub(crate) fn new(memory: Box<Memory>, pc: usize) -> Emulator {
+    pub fn new(memory: Box<Memory>, pc: usize) -> Emulator {
         Emulator { memory,
             shift_register: 0,
             shift_register_offset: 0,

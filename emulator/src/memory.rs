@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::Read;
 use crate::state::State;
 use crate::opcodes::Opcode;
-use std::sync::{Mutex, RwLock};
 use crate::listener::Listener;
+use std::sync::{Mutex, RwLock};
 use lazy_static::lazy_static;
 
 const MEMORY_SIZE: usize = 0x4000;
@@ -29,7 +29,7 @@ pub struct Memory<'a> {
 }
 
 impl<'a> Memory<'a> {
-    pub(crate) fn new(listener: Option<&'a Mutex<dyn Listener>>) -> Self {
+    pub fn new(listener: Option<&'a Mutex<dyn Listener>>) -> Self {
         Memory {
             verbose: false,
             listener,
@@ -40,7 +40,7 @@ impl<'a> Memory<'a> {
         self.verbose = v;
     }
 
-    pub(crate) fn read_file(&mut self, file_name: &str, start: usize) {
+    pub fn read_file(&mut self, file_name: &str, start: usize) {
         let mut file = File::open(file_name).expect("Couldn't open file");
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).expect("Couldn't read file");
