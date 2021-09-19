@@ -35,7 +35,7 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
     let m = Memory::new(Some(listener));// as &Box<dyn GraphicRenderer + Send>);
     let mut memory = Box::new(m);
     memory.read_file("space-invaders.rom", 0);
-    let mut computer = Emulator::new(memory, 0 /* pc */);
+    let mut emulator = Emulator::new(memory, 0 /* pc */);
     let time_per_frame_ms = 16;
 
     //
@@ -47,7 +47,7 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
         loop {
             let start = SystemTime::now();
             // Run one frame
-            let cycles = computer.run_one_frame(false);
+            let cycles = emulator.run_one_frame(false);
             let elapsed = start.elapsed().unwrap().as_millis();
 
             // Wait until we reach 16ms before running the next frame.
