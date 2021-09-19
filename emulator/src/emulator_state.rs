@@ -2,6 +2,9 @@ use crate::memory;
 use crate::listener::Listener;
 use crate::memory::GRAPHIC_MEMORY_SIZE;
 
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
 pub struct EmulatorState {
     display: bool,
     megahertz: f64,
@@ -11,6 +14,7 @@ pub struct EmulatorState {
 
 }
 
+#[wasm_bindgen]
 impl EmulatorState {
     pub fn new() -> EmulatorState {
         EmulatorState {
