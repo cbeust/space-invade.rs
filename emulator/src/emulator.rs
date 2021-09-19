@@ -28,6 +28,12 @@ impl Emulator<'_> {
     pub const WIDTH: u16 = 224;
     pub const HEIGHT: u16 = 256;
 
+    pub fn new_space_invaders() -> Emulator<'static> {
+        let mut memory = Memory::new(None);
+        memory.read_file("space-invaders.rom", 0);
+        Emulator::new(Box::new(memory), 0x100)
+    }
+
     pub fn new(memory: Box<Memory>, pc: usize) -> Emulator {
         Emulator { memory,
             shift_register: 0,
@@ -55,8 +61,10 @@ impl Emulator<'_> {
     }
 
     pub fn step(&mut self, verbose: bool) -> StepResult {
-        if self.memory.listener.unwrap().lock().unwrap().is_paused() {
-            return StepResult { status: StepStatus::Paused, cycles: 0};
+        if let Some(listener) = self.memory.listener {
+            if listener.lock().unwrap().is_paused() {
+                return StepResult { status: StepStatus::Paused, cycles: 0 };
+            }
         }
 
         let state = &mut self.state.as_mut().unwrap();

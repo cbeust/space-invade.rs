@@ -6,7 +6,7 @@ use crate::listener::Listener;
 use std::sync::{Mutex, RwLock};
 use lazy_static::lazy_static;
 
-const MEMORY_SIZE: usize = 0x4000;
+const MEMORY_SIZE: usize = 0x10000;
 pub const SCREEN_WIDTH: usize = 0x20;  // 0x20 bytes (256 pixels)
 pub const SCREEN_HEIGHT: usize = 0xe0;
 pub const GRAPHIC_MEMORY_SIZE: usize = SCREEN_WIDTH * SCREEN_HEIGHT;
