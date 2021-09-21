@@ -535,7 +535,7 @@ fn init_opcodes() -> HashMap<u8, Opcode> {
 }
 
 lazy_static! {
-    pub(crate) static ref OPCODES: HashMap<u8, Opcode> = init_opcodes();
+    pub static ref OPCODES: HashMap<u8, Opcode> = init_opcodes();
 }
 
 // fn insert(map: &mut HashMap<u8, Opcode>, opcode: u8, size: usize, name: &'static str) {

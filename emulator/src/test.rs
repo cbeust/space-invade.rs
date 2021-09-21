@@ -5,7 +5,7 @@ mod test {
 
     #[test]
     fn run_cpu_diag() {
-        let mut memory = Memory::new(None);
+        let mut memory = Memory::new();
         let start = 0x100;
         memory.read_file("cpudiag.bin", start);
         let mut computer = Emulator::new(Box::new(memory), start as usize);

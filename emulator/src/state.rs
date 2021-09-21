@@ -1,7 +1,7 @@
 use crate::memory::Memory;
 
 #[derive(Default)]
-pub(crate) struct Psw {
+pub struct Psw {
     pub a: u8,
     pub sign: bool,
     pub zero: bool,
@@ -18,8 +18,8 @@ pub(crate) struct Psw {
  * Flag: S Z 0 AC 0 P 1 C
  */
 impl Psw {
-    pub(crate) fn to_u8(f: bool) -> u16 { if f { 1 } else { 0 } }
-    pub(crate) fn to_bool(v: u8) -> bool { if v == 0 { false } else { true }}
+    pub fn to_u8(f: bool) -> u16 { if f { 1 } else { 0 } }
+    pub fn to_bool(v: u8) -> bool { if v == 0 { false } else { true }}
 
     pub(crate) fn set_flags(&mut self, value: u8) {
         self.sign = Psw::to_bool(value & (1 << 7));
@@ -49,7 +49,7 @@ impl Psw {
 }
 
 #[derive(Default)]
-pub(crate) struct State {
+pub struct Cpu {
     pub b: u8,
     pub c: u8,
     pub d: u8,
@@ -62,9 +62,9 @@ pub(crate) struct State {
     pub enable_interrupts: bool,
 }
 
-impl State {
-    pub(crate) fn new(pc: usize) -> State {
-        State {
+impl Cpu {
+    pub(crate) fn new(pc: usize) -> Cpu {
+        Cpu {
             pc,
             .. Default::default()
         }
@@ -106,17 +106,17 @@ impl State {
         }
     }
 
-    pub fn call(&mut self, memory: &mut Memory, target_pc: usize) {
+    pub fn call(&mut self, memory: &mut Vec<u8>, target_pc: usize) {
         let ret = self.pc + 3;
-        memory.write(self.sp - 1, ((ret >> 8) as u8) & 0xff);
-        memory.write(self.sp - 2, (ret & 0xff) as u8);
+        memory[self.sp - 1] = ((ret >> 8) as u8) & 0xff;
+        memory[self.sp - 2] = (ret & 0xff) as u8;
         self.sp -= 2;
         self.pc = target_pc;
     }
 
-    pub fn ret(&mut self, memory: &Memory, flag: bool) -> bool {
+    pub fn ret(&mut self, memory: &mut Vec<u8>, flag: bool) -> bool {
         if flag {
-            self.pc = Memory::to_word(memory.read(self.sp), memory.read(self.sp + 1));
+            self.pc = Memory::to_word(memory[self.sp], memory[self.sp + 1]);
             self.sp += 2;
         }
         flag
