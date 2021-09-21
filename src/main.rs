@@ -13,8 +13,8 @@ lazy_static! {
 }
 
 fn main() {
-    // sdl2::sdl2(&STATIC_LISTENER).unwrap();
-    emulator2::main();
+    sdl2::sdl2().unwrap();
+    // emulator2::main();
 }
 
 pub fn log_time(s: &str) {

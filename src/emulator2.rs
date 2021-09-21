@@ -1,5 +1,5 @@
 
-const MEMORY_SIZE: usize = 256;
+const MEMORY_SIZE: usize = 0x4000;
 
 use lazy_static::lazy_static;
 use std::sync::RwLock;
@@ -81,14 +81,19 @@ pub trait Emulator {
 
 pub struct Runner{
     paused: bool,
+    shift_register: u16,
+    shift_register_offset: u8,
 }
 
 impl Runner {
     pub fn new() -> Runner {
-        let mut file = File::open("space-invaders.rom").expect("Couldn't open file");
-        file.read_to_end(&mut SHARED_STATE.write().unwrap().memory).expect("Couldn't read file");
+        Memory::read_file("space-invaders.rom", 0);
+        let cpu = &mut SHARED_STATE.write().unwrap().cpu;
+        cpu.pc = 0;
         Runner {
             paused: false,
+            shift_register: 0,
+            shift_register_offset: 0,
         }
     }
 
@@ -247,11 +252,11 @@ impl Runner {
                 cycles = 4;
             },
             opcodes::LDAX_B => {
-                cpu.psw.a = Memory::read_word(cpu.c, cpu.b);
+                cpu.psw.a = Memory::read_from_bytes(cpu.c, cpu.b);
                 cycles = 7;
             },
             opcodes::LDAX_D => {
-                cpu.psw.a = Memory::read_word(cpu.e, cpu.d);
+                cpu.psw.a = Memory::read_from_bytes(cpu.e, cpu.d);
                 cycles = 7;
             },
             opcodes::STAX_B => {
@@ -268,8 +273,8 @@ impl Runner {
                 cycles = 16;
             },
             opcodes::SHLD => {
-                self.memory.write(word, cpu.l);
-                self.memory.write(word + 1, cpu.h);
+                Memory::write(word, cpu.l);
+                Memory::write(word + 1, cpu.h);
                 cycles = 16;
             },
             opcodes::LDA => {
@@ -277,7 +282,7 @@ impl Runner {
                 cycles = 13;
             },
             opcodes::STA => {
-                self.memory.write(word, cpu.psw.a);
+                Memory::write(word, cpu.psw.a);
                 cycles = 13;
             },
             opcodes::MVI_A => {
@@ -309,7 +314,7 @@ impl Runner {
                 cycles = 7;
             },
             opcodes::MVI_M => {
-                self.memory.write(cpu.m(), byte1);
+                Memory::write(cpu.m(), byte1);
                 cycles = 10;
             },
             opcodes::INR_A => {
@@ -341,7 +346,7 @@ impl Runner {
                 cycles = 5;
             },
             opcodes::INR_M => {
-                self.memory.write(cpu.m(), cpu.inr(self.read_memory(cpu.m())));
+                Memory::write(cpu.m(), cpu.inr(self.read_memory(cpu.m())));
                 cycles = 10;
             },
             opcodes::DCR_A => {
@@ -373,7 +378,7 @@ impl Runner {
                 cycles = 5;
             },
             opcodes::DCR_M => {
-                self.memory.write(cpu.m(), cpu.dec(self.read_memory(cpu.m())));
+                Memory::write(cpu.m(), cpu.dec(self.read_memory(cpu.m())));
                 cycles = 10;
             },
             opcodes::MOV_B_A => {
@@ -545,32 +550,32 @@ impl Runner {
                 cycles = 5;
             },
             opcodes::MOV_M_B => {
-                self.memory.write(cpu.m(), cpu.b);
+                Memory::write(cpu.m(), cpu.b);
                 cycles = 7;
             },
             opcodes::MOV_M_C => {
-                self.memory.write(cpu.m(), cpu.c);
+                Memory::write(cpu.m(), cpu.c);
                 cycles = 7;
             },
             opcodes::MOV_M_D => {
-                self.memory.write(cpu.m(), cpu.d);
+                Memory::write(cpu.m(), cpu.d);
                 cycles = 7;
             },
             opcodes::MOV_M_E => {
-                self.memory.write(cpu.m(), cpu.e);
+                Memory::write(cpu.m(), cpu.e);
                 cycles = 7;
             },
             opcodes::MOV_M_H => {
-                self.memory.write(cpu.m(), cpu.h);
+                Memory::write(cpu.m(), cpu.h);
                 cycles = 7;
             },
             opcodes::MOV_M_L => {
-                self.memory.write(cpu.m(), cpu.l);
+                Memory::write(cpu.m(), cpu.l);
                 cycles = 7;
             },
             opcodes::MOV_M_A => {
                 // self.memory.disassemble_instructions(state.pc, 10);
-                self.memory.write(cpu.m(), cpu.psw.a);
+                Memory::write(cpu.m(), cpu.psw.a);
                 cycles = 7;
             },
             opcodes::MOV_L_B => {
@@ -793,8 +798,9 @@ impl Runner {
             },
             opcodes::JMP => {
                 if word == 0 {
-                    let output: String = self.output_buffer.clone().into_iter().collect();
-                    println!("{}", output);
+                    todo!("Need to implement output routine for tests");
+                    // let output: String = self.output_buffer.clone().into_iter().collect();
+                    // println!("{}", output);
                 } else {
                     cpu.pc = word;
                     pc_was_assigned = true;
@@ -802,39 +808,39 @@ impl Runner {
                 cycles = 10;
             },
             opcodes::RPO => {
-                pc_was_assigned = cpu.ret(&mut self.memory, ! cpu.psw.parity);
+                pc_was_assigned = cpu.ret(! cpu.psw.parity);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RPE => {
-                pc_was_assigned = cpu.ret(&mut self.memory, cpu.psw.parity);
+                pc_was_assigned = cpu.ret(cpu.psw.parity);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RNC => {
-                pc_was_assigned = cpu.ret(&mut self.memory, ! cpu.psw.carry);
+                pc_was_assigned = cpu.ret(! cpu.psw.carry);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RC => {
-                pc_was_assigned = cpu.ret(&mut self.memory, cpu.psw.carry);
+                pc_was_assigned = cpu.ret(cpu.psw.carry);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RP => {
-                pc_was_assigned = cpu.ret(&mut self.memory, ! cpu.psw.sign);
+                pc_was_assigned = cpu.ret(! cpu.psw.sign);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RM => {
-                pc_was_assigned = cpu.ret(&mut self.memory, cpu.psw.sign);
+                pc_was_assigned = cpu.ret(cpu.psw.sign);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RZ => {
-                pc_was_assigned = cpu.ret(&mut self.memory, cpu.psw.zero);
+                pc_was_assigned = cpu.ret(cpu.psw.zero);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RNZ => {
-                pc_was_assigned = cpu.ret(&mut self.memory, ! cpu.psw.zero);
+                pc_was_assigned = cpu.ret(! cpu.psw.zero);
                 cycles = if pc_was_assigned { 11 } else { 5 };
             },
             opcodes::RET => {
-                pc_was_assigned = cpu.ret(&mut self.memory, true);
+                pc_was_assigned = cpu.ret(true);
                 cycles = 11;
             },
             opcodes::POP_B => {
@@ -856,75 +862,75 @@ impl Runner {
                 cycles = 10;
             },
             opcodes::PUSH_B => {
-                self.memory.write(cpu.sp - 1, cpu.b);
-                self.memory.write(cpu.sp - 2, cpu.c);
+                Memory::write(cpu.sp - 1, cpu.b);
+                Memory::write(cpu.sp - 2, cpu.c);
                 cpu.sp -= 2;
                 cycles = 11;
             },
             opcodes::PUSH_D => {
-                self.memory.write(cpu.sp - 1, cpu.d);
-                self.memory.write(cpu.sp - 2, cpu.e);
+                Memory::write(cpu.sp - 1, cpu.d);
+                Memory::write(cpu.sp - 2, cpu.e);
                 cpu.sp -= 2;
                 cycles = 11;
             },
             opcodes::PUSH_H => {
-                self.memory.write(cpu.sp - 1, cpu.h);
-                self.memory.write(cpu.sp - 2, cpu.l);
+                Memory::write(cpu.sp - 1, cpu.h);
+                Memory::write(cpu.sp - 2, cpu.l);
                 cpu.sp -= 2;
                 cycles = 11;
             },
             opcodes::CC => {
                 if cpu.psw.carry {
-                    cpu.call(&mut SHARED_STATE.write().unwrap().memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CPO => {
                 if ! cpu.psw.parity {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CPE => {
                 if cpu.psw.parity {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CM => {
                 if cpu.psw.sign {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CP => {
                 if ! cpu.psw.sign {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CNZ => {
                 if ! cpu.psw.zero {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CZ => {
                 if cpu.psw.zero {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
             },
             opcodes::CNC => {
                 if ! cpu.psw.carry {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
                 cycles = if pc_was_assigned { 11 } else { 17 };
@@ -978,15 +984,15 @@ impl Runner {
                             let s = format!("Failure at pc {:04x}", pc);
                             test_status.status = StepStatus::Failure(s);
                         } else {
-                            cpu.call(&mut self.memory, word);
+                            cpu.call(word);
                             pc_was_assigned = true;
                         }
                     } else {
-                        cpu.call(&mut self.memory, word);
+                        cpu.call(word);
                         pc_was_assigned = true;
                     }
                 } else {
-                    cpu.call(&mut self.memory, word);
+                    cpu.call(word);
                     pc_was_assigned = true;
                 }
             },
@@ -1104,10 +1110,10 @@ impl Runner {
             },
             opcodes::XTHL => {
                 let l = self.read_memory(cpu.sp);
-                self.memory.write(cpu.sp, cpu.l);
+                Memory::write(cpu.sp, cpu.l);
                 cpu.l = l;
                 let h = self.read_memory(cpu.sp + 1);
-                self.memory.write(cpu.sp + 1, cpu.h);
+                Memory::write(cpu.sp + 1, cpu.h);
                 cpu.h = h;
                 cycles = 18;
             },
@@ -1153,8 +1159,8 @@ impl Runner {
                 cycles = 4;
             },
             opcodes::PUSH_PSW => {
-                self.memory.write(cpu.sp - 1, cpu.psw.a);
-                self.memory.write(cpu.sp - 2, (cpu.psw.value() & 0xff) as u8);
+                Memory::write(cpu.sp - 1, cpu.psw.a);
+                Memory::write(cpu.sp - 2, (cpu.psw.value() & 0xff) as u8);
                 cpu.sp -= 2;
                 cycles = 11;
             },
@@ -1244,14 +1250,17 @@ impl Runner {
             opcodes::IN => {
                 match byte1 {
                     1 => {
-                        cpu.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_1();
+                        // println!("IMPLEMENT IN 1");
+                        // cpu.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_1();
                     },
                     2 => {
-                        cpu.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_2();
+                        // println!("IMPLEMENT IN 2");
+                        // cpu.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_2();
                     },
                     3 => {
-                        let shift_amount = 8 - self.shift_register_offset;
-                        cpu.psw.a = (self.shift_register >> shift_amount) as u8;
+                        // println!("IMPLEMENT IN 3");
+                        // let shift_amount = 8 - self.shift_register_offset;
+                        // cpu.psw.a = (self.shift_register >> shift_amount) as u8;
                     },
                     _ => {
                         panic!("Unsupported IN port: {}", byte1);
@@ -1260,17 +1269,17 @@ impl Runner {
                 cycles = 10;
             }
             opcodes::RST_1 => {
-                cpu.call(&mut self.memory, 1 * 8);
+                cpu.call(1 * 8);
                 pc_was_assigned = true;
                 cycles = 10;
             }
             opcodes::RST_2 => {
-                cpu.call(&mut self.memory, 2 * 8);
+                cpu.call(2 * 8);
                 pc_was_assigned = true;
                 cycles = 10;
             }
             opcodes::RST_7 => {
-                cpu.call(&mut self.memory, 7 * 8);
+                cpu.call(7 * 8);
                 pc_was_assigned = true;
                 cycles = 10;
             }
@@ -1293,14 +1302,14 @@ impl Runner {
     }
 
     fn interrupt(&mut self, interrupt_number: u8) {
-        if self.state.as_ref().unwrap().enable_interrupts {
+        if SHARED_STATE.read().unwrap().cpu.enable_interrupts {
             // log_time(format!("Interrupt {}", interrupt_number).as_str());
-            let state = self.state.as_mut().unwrap();
-            self.memory.write(state.sp - 1, ((state.pc as u16 & 0xff00) >> 8) as u8);
-            self.memory.write(state.sp - 2, (state.pc as u16 & 0xff) as u8);
-            state.sp -= 2;
+            let cpu = &mut SHARED_STATE.write().unwrap().cpu;
+            Memory::write(cpu.sp - 1, ((cpu.pc as u16 & 0xff00) >> 8) as u8);
+            Memory::write(cpu.sp - 2, (cpu.pc as u16 & 0xff) as u8);
+            cpu.sp -= 2;
             // Interrupt 0 goes to $0, 1 to $08, 2 to $10, etc...
-            state.pc = (interrupt_number as usize) << 3;
+            cpu.pc = (interrupt_number as usize) << 3;
         }
     }
 }
@@ -1335,7 +1344,7 @@ impl Emulator for Runner {
     }
 
     fn write_memory(&mut self, address: usize, value: u8) {
-        SHARED_STATE.write().unwrap().memory[address] = value;
+        Memory::write(address, value);
     }
 
     fn memory(&self) -> Vec<u8> {
@@ -1343,7 +1352,7 @@ impl Emulator for Runner {
     }
 
     fn read_memory(&self, address: usize) -> u8 {
-        SHARED_STATE.read().unwrap()[address]
+        Memory::read(address)
     }
 
     fn set_input_1(&mut self, bit: u8, value: bool) {
@@ -1367,23 +1376,23 @@ impl Emulator for Runner {
     }
 }
 
-pub(crate) fn main() {
-    let mut e2 = Runner::new();
-    let mut e3 = Runner::new();
-    let t = thread::spawn(move || {
-        let mut i = 0;
-        loop {
-            e2.run_one_frame();
-            println!("Writing {}, input_1: {}", i, e2.input_1());
-            e2.write_memory(0, i);
-            i += 1;
-        }
-    });
-    loop {
-        let value = e3.memory()[0];
-        let s = format!("============= Memory: {:02x}", value);
-        e3.set_input_1(value);
-        log_time(&s);
-        thread::sleep(Duration::from_millis(500));
-    }
-}
+// pub(crate) fn main() {
+//     let mut e2 = Runner::new();
+//     let mut e3 = Runner::new();
+//     let t = thread::spawn(move || {
+//         let mut i = 0;
+//         loop {
+//             e2.run_one_frame(true);
+//             println!("Writing {}, input_1: {}", i, e2.input_1());
+//             e2.write_memory(0, i);
+//             i += 1;
+//         }
+//     });
+//     loop {
+//         let value = e3.memory()[0];
+//         let s = format!("============= Memory: {:02x}", value);
+//         e3.set_input_1(value);
+//         log_time(&s);
+//         thread::sleep(Duration::from_millis(500));
+//     }
+// }

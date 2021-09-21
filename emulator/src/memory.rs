@@ -38,22 +38,37 @@ impl Memory {
         self.verbose = v;
     }
 
-    pub(crate) fn read(i: usize) -> u8 {
+    pub fn read(i: usize) -> u8 {
         STATIC_MEMORY.read().unwrap()[i]
     }
 
-    pub fn read_word(b0: u8, b1: u8) -> u8 {
+    pub fn read_from_bytes(b0: u8, b1: u8) -> u8 {
         STATIC_MEMORY.read().unwrap()[Memory::to_word(b0, b1)]
     }
 
-    pub fn write(b0: u8, b1: u8, value: u8) {
-        let address = Memory::to_word(b0, b1);
+    pub fn write_from_bytes(b0: u8, b1: u8, value: u8) {
+        Memory::write(Memory::to_word(b0, b1), value);
+    }
+
+    pub fn write(address: usize, value: u8) {
         STATIC_MEMORY.write().unwrap()[address] = value;
     }
 
     pub fn write_word(b0: u8, b1: u8, value: u8) {
         let address = Memory::to_word(b0, b1);
         STATIC_MEMORY.write().unwrap()[address] = value;
+    }
+
+    pub fn read_file(file_name: &str, start: usize) {
+        let mut file = File::open(file_name).expect("Couldn't open file");
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer).expect("Couldn't read file");
+
+        let mut i: usize = 0;
+        for byte in buffer {
+            Memory::write(i + start, byte);
+            i += 1;
+        }
     }
 
     // pub(crate) fn disassemble_instructions(&self, start: usize, instruction_count: u16) {

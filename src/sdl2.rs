@@ -30,7 +30,6 @@ pub fn sdl2() -> Result<(), String> {
     canvas.present();
     let mut event_pump = sdl_context.event_pump()?;
 
-    let mut emulator = Runner::new();
     // let m = Memory::new(Some(listener));// as &Box<dyn GraphicRenderer + Send>);
     // let mut memory = Box::new(m);
     // memory.read_file("space-invaders.rom", 0);
@@ -43,6 +42,7 @@ pub fn sdl2() -> Result<(), String> {
     // object that this function receives in parameter.
     //
     thread::spawn(move || {
+        let mut emulator = Runner::new();
         loop {
             let start = SystemTime::now();
             // Run one frame
@@ -73,6 +73,7 @@ pub fn sdl2() -> Result<(), String> {
     canvas.clear();
     canvas.present();
     let mut last_title_update = SystemTime::now();
+    let mut emulator = Runner::new();
 
     // Main game loop
     'running: loop {

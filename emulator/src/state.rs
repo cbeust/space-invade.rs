@@ -21,7 +21,7 @@ impl Psw {
     pub fn to_u8(f: bool) -> u16 { if f { 1 } else { 0 } }
     pub fn to_bool(v: u8) -> bool { if v == 0 { false } else { true }}
 
-    pub(crate) fn set_flags(&mut self, value: u8) {
+    pub fn set_flags(&mut self, value: u8) {
         self.sign = Psw::to_bool(value & (1 << 7));
         self.zero = Psw::to_bool(value & (1 << 6));
         self.auxiliary_carry = Psw::to_bool(value & (1 << 4));
@@ -29,7 +29,7 @@ impl Psw {
         self.carry = Psw::to_bool(value & 1);
     }
 
-    pub(crate) fn value(&self) -> u16 {
+    pub fn value(&self) -> u16 {
         (self.a as u16) << 8 |
             Psw::to_u8(self.sign) << 7 |
             Psw::to_u8(self.zero) << 6 |
@@ -106,17 +106,17 @@ impl Cpu {
         }
     }
 
-    pub fn call(&mut self, memory: &mut Vec<u8>, target_pc: usize) {
+    pub fn call(&mut self, target_pc: usize) {
         let ret = self.pc + 3;
-        memory[self.sp - 1] = ((ret >> 8) as u8) & 0xff;
-        memory[self.sp - 2] = (ret & 0xff) as u8;
+        Memory::write(self.sp - 1,((ret >> 8) as u8) & 0xff);
+        Memory::write(self.sp - 2, (ret & 0xff) as u8);
         self.sp -= 2;
         self.pc = target_pc;
     }
 
-    pub fn ret(&mut self, memory: &mut Vec<u8>, flag: bool) -> bool {
+    pub fn ret(&mut self, flag: bool) -> bool {
         if flag {
-            self.pc = Memory::to_word(memory[self.sp], memory[self.sp + 1]);
+            self.pc = Memory::to_word(Memory::read(self.sp), Memory::read(self.sp + 1));
             self.sp += 2;
         }
         flag

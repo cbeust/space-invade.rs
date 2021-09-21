@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 
 pub struct Opcode {
     opcode: u8,
-    pub(crate) size: usize,
+    pub size: usize,
     name: &'static str
 }
 
