@@ -29,12 +29,6 @@ pub fn sdl2() -> Result<(), String> {
 
     canvas.clear();
     canvas.present();
-    let mut event_pump = sdl_context.event_pump()?;
-
-    // let m = Memory::new(Some(&SHARED_STATE));// as &Box<dyn GraphicRenderer + Send>);
-    // let mut memory = Box::new(m);
-    // memory.read_file("space-invaders.rom", 0);
-    // let mut emulator = Emulator::new(memory, 0 /* pc */);
 
     //
     // Spawn the game logic in a separate thread. This logic will communicate with the
@@ -45,9 +39,12 @@ pub fn sdl2() -> Result<(), String> {
 
     canvas.clear();
     canvas.present();
+
+    // Only update the title every one second or so
     let mut last_title_update = SystemTime::now();
 
     // Main game loop
+    let mut event_pump = sdl_context.event_pump()?;
     'running: loop {
         for event in event_pump.poll_iter() {
 
@@ -178,7 +175,7 @@ pub fn sdl2() -> Result<(), String> {
             }
         }
 
-        if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(500)) {
+        if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(1000)) {
             let paused = if shared_state.lock().unwrap().is_paused() { " - Paused" } else { "" };
             canvas.window_mut().set_title(
                 format!("space-invade.rs - Cédric Beust - {:.2} Mhz{}",

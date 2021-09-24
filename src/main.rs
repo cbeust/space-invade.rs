@@ -4,8 +4,8 @@ use std::time::{UNIX_EPOCH, SystemTime};
 
 mod sdl2;
 
-fn main() {
-    sdl2::sdl2().unwrap();
+fn main() -> Result<(), String> {
+    sdl2::sdl2()
 }
 
 pub fn log_time(s: &str) {

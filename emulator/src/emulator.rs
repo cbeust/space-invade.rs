@@ -26,20 +26,20 @@ pub struct StepResult {
     pub cycles: u8,
 }
 
-pub struct Emulator<'a> {
-    memory: Box<Memory<'a>>,
+pub struct Emulator {
+    memory: Box<Memory>,
     state: Option<State>,
     shift_register: u16,
     shift_register_offset: u8,
     output_buffer: Vec<char>,
 }
 
-impl Emulator<'_> {
+impl Emulator {
     pub const WIDTH: u16 = 224;
     pub const HEIGHT: u16 = 256;
 
-    pub fn new_space_invaders() -> Emulator<'static> {
-        let mut memory = Memory::new(Some(&SHARED_STATE));
+    pub fn new_space_invaders() -> Emulator {
+        let mut memory = Memory::new();
         memory.read_file("space-invaders.rom", 0);
         Emulator::new(Box::new(memory), 0)
     }
@@ -107,10 +107,8 @@ impl Emulator<'_> {
     }
 
     pub fn step(&mut self, verbose: bool) -> StepResult {
-        if let Some(listener) = self.memory.listener {
-            if listener.lock().unwrap().is_paused() {
-                return StepResult { status: StepStatus::Paused, cycles: 0 };
-            }
+        if SHARED_STATE.lock().unwrap().is_paused() {
+            return StepResult { status: StepStatus::Paused, cycles: 0 };
         }
 
         let state = &mut self.state.as_mut().unwrap();
@@ -1239,10 +1237,10 @@ impl Emulator<'_> {
             opcodes::IN => {
                 match byte1 {
                     1 => {
-                        state.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_1();
+                        state.psw.a = SHARED_STATE.lock().unwrap().get_in_1();
                     },
                     2 => {
-                        state.psw.a = self.memory.listener.unwrap().lock().unwrap().get_in_2();
+                        state.psw.a = SHARED_STATE.lock().unwrap().get_in_2();
                     },
                     3 => {
                         let shift_amount = 8 - self.shift_register_offset;

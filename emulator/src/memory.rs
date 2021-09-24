@@ -23,16 +23,14 @@ lazy_static! {
     pub(crate) static ref STATIC_MEMORY: RwLock<[u8; MEMORY_SIZE]> = RwLock::new(_STATIC_MEMORY);
 }
 
-pub struct Memory<'a> {
+pub struct Memory {
     pub verbose: bool,
-    pub listener: Option<&'a Mutex<SharedState>>,
 }
 
-impl<'a> Memory<'a> {
-    pub fn new(listener: Option<&'a Mutex<SharedState>>) -> Self {
+impl Memory {
+    pub fn new() -> Self {
         Memory {
             verbose: false,
-            listener,
         }
     }
 
