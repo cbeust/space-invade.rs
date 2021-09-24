@@ -55,36 +55,6 @@ impl<'a> Memory<'a> {
         }
     }
 
-    /*
-        $2400: 0,0 -> 0,7
-        $2401: 0,8 -> 0,f
-        ...
-        $241f: 0,f8 -> 0,ff
-        $2420: 1,0 -> 1,7
-        ...
-        $243f: 1,f8 ->1,ff
-        $2440: 2,0 -> 2,7
-        ...
-     */
-
-    /*
-        int i = 0x2400;  // Start of Video RAM
-    for (int col = 0; col < WIDTH; col ++) {
-        for (int row = HEIGHT; row > 0; row -= 8) {
-            for (int j = 0; j < 8; j++) {
-                int idx = (row - j) * WIDTH + col;
-
-                if (ram->mem[i] & 1 << j) {
-                    pix[idx] = 0xFFFFFF;
-                } else {
-                    pix[idx] = 0x000000;
-                }
-            }
-
-            i++;
-        }
-    }
-     */
     pub(crate) fn write(&mut self, address: usize, value: u8) {
         STATIC_MEMORY.write().unwrap()[address] = value;
         if self.verbose {
@@ -104,21 +74,6 @@ impl<'a> Memory<'a> {
         let address = Memory::to_word(b0, b1);
         STATIC_MEMORY.write().unwrap()[address] = value;
     }
-
-    // pub(crate) fn disassemble_instructions(&self, start: usize, instruction_count: u16) {
-    //     let mut pc = start;
-    //     let mut n = instruction_count;
-    //     while n > 0 {
-    //         let op = OPCODES.get(&self.read(pc)).expect("Couldn't find opcode");
-    //         let s =
-    //             if op.size == 1 { op.display1() }
-    //             else if op.size == 2 { op.display2(self.read(pc + 1))}
-    //             else { op.display3(self.read(pc + 1), self.read(pc + 2))};
-    //         println!("{:04x} {}", pc, s);
-    //         pc += op.size;
-    //         n -= 1;
-    //     }
-    // }
 
     pub(crate) fn disassemble(&self, opcode: &Opcode, pc: usize) -> (String, usize) {
         let formatted_opcode = match opcode.size {
