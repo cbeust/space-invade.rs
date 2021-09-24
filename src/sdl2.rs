@@ -7,8 +7,7 @@ use emulator::memory::Memory;
 use std::thread;
 use std::sync::Mutex;
 use emulator::emulator::Emulator;
-use emulator::emulator_state::EmulatorState;
-use emulator::listener::Listener;
+use emulator::emulator_state::SharedState;
 
 const RECTANGLE_SIZE: u32 = 2;
 const WHITE: Color = Color::RGB(255, 255, 255);
@@ -16,7 +15,7 @@ const BLACK: Color = Color::RGB(0, 0, 0);
 const RED: Color = Color::RGB(255, 0, 0);
 const GREEN: Color = Color::RGB(0, 255, 0);
 
-pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
+pub fn sdl2() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
@@ -32,43 +31,17 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
     canvas.present();
     let mut event_pump = sdl_context.event_pump()?;
 
-    let m = Memory::new(Some(listener));// as &Box<dyn GraphicRenderer + Send>);
-    let mut memory = Box::new(m);
-    memory.read_file("space-invaders.rom", 0);
-    let mut emulator = Emulator::new(memory, 0 /* pc */);
-    let time_per_frame_ms = 16;
+    // let m = Memory::new(Some(&SHARED_STATE));// as &Box<dyn GraphicRenderer + Send>);
+    // let mut memory = Box::new(m);
+    // memory.read_file("space-invaders.rom", 0);
+    // let mut emulator = Emulator::new(memory, 0 /* pc */);
 
     //
     // Spawn the game logic in a separate thread. This logic will communicate with the
-    // main thread (and therefore, the actual graphics on your screen) via the `listener`
-    // object that this function receives in parameter.
+    // main thread (and therefore, the actual graphics on your screen) via the `SHARED_STATE`
+    // object returned by the start of the emilator.
     //
-    thread::spawn(move || {
-        loop {
-            let start = SystemTime::now();
-            // Run one frame
-            let cycles = emulator.run_one_frame(false);
-            let elapsed = start.elapsed().unwrap().as_millis();
-
-            // Wait until we reach 16ms before running the next frame.
-            // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
-            // which might explain why my game is going a bit too fast. I should actually
-            // rewrite this logic to guarantee that it runs every 16ms
-            if elapsed < time_per_frame_ms {
-                std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
-            }
-            let after_sleep = start.elapsed().unwrap().as_micros();
-            if false {
-                println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
-                         elapsed,
-                         after_sleep,
-                         cycles);
-            }
-
-            listener.lock().unwrap().set_megahertz(cycles as f64 / after_sleep as f64);
-        }
-    });
-
+    let shared_state = Emulator::start_emulator();
 
     canvas.clear();
     canvas.present();
@@ -86,7 +59,7 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
                     => break 'running,
                 // Pause / unpause ('p')
                 Event::KeyDown { keycode: Some(Keycode::P), .. } => {
-                    let mut l = listener.lock().unwrap();
+                    let mut l = shared_state.lock().unwrap();
                     if l.is_paused() {
                         l.unpause();
                     } else {
@@ -96,76 +69,76 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
 
                 // Insert coin
                 Event::KeyDown { keycode: Some(Keycode::C), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(0, true);
+                    shared_state.lock().unwrap().set_bit_in_1(0, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::C), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(0, false);
+                    shared_state.lock().unwrap().set_bit_in_1(0, false);
                 },
                 // Start 2 players
                 Event::KeyDown { keycode: Some(Keycode::Num2), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(1, true);
+                    shared_state.lock().unwrap().set_bit_in_1(1, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::Num2), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(1, false);
+                    shared_state.lock().unwrap().set_bit_in_1(1, false);
                 },
                 // Start 1 player
                 Event::KeyDown { keycode: Some(Keycode::Num1), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(2, true);
+                    shared_state.lock().unwrap().set_bit_in_1(2, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::Num1), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(2, false);
+                    shared_state.lock().unwrap().set_bit_in_1(2, false);
                 },
                 // Player 1 shot
                 Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
-                    if listener.lock().unwrap().is_paused() {
-                        listener.lock().unwrap().unpause();
+                    if shared_state.lock().unwrap().is_paused() {
+                        shared_state.lock().unwrap().unpause();
                     } else {
-                        listener.lock().unwrap().set_bit_in_1(4, true);
+                        shared_state.lock().unwrap().set_bit_in_1(4, true);
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::Space), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(4, false);
+                    shared_state.lock().unwrap().set_bit_in_1(4, false);
                 },
                 // Player 1 move left
                 Event::KeyDown { keycode: Some(Keycode::Left), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(5, true);
+                    shared_state.lock().unwrap().set_bit_in_1(5, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::Left), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(5, false);
+                    shared_state.lock().unwrap().set_bit_in_1(5, false);
                 },
                 // Player 1 move right
                 Event::KeyDown { keycode: Some(Keycode::Right), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(6, true);
+                    shared_state.lock().unwrap().set_bit_in_1(6, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::Right), .. } => {
-                    listener.lock().unwrap().set_bit_in_1(6, false);
+                    shared_state.lock().unwrap().set_bit_in_1(6, false);
                 },
 
                 // Player 2 shot ('s')
                 Event::KeyDown { keycode: Some(Keycode::S), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(4, true);
+                    shared_state.lock().unwrap().set_bit_in_2(4, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::S), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(4, false);
+                    shared_state.lock().unwrap().set_bit_in_2(4, false);
                 },
                 // Player 2 move left ('a')
                 Event::KeyDown { keycode: Some(Keycode::A), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(5, true);
+                    shared_state.lock().unwrap().set_bit_in_2(5, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::A), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(5, false);
+                    shared_state.lock().unwrap().set_bit_in_2(5, false);
                 },
                 // Player 2 move right ('d')
                 Event::KeyDown { keycode: Some(Keycode::D), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(6, true);
+                    shared_state.lock().unwrap().set_bit_in_2(6, true);
                 },
                 Event::KeyUp { keycode: Some(Keycode::D), .. } => {
-                    listener.lock().unwrap().set_bit_in_2(6, false);
+                    shared_state.lock().unwrap().set_bit_in_2(6, false);
                 },
                 // If the emulator is paused, any key will unpause it
                 Event::KeyDown { .. } => {
-                    if listener.lock().unwrap().is_paused() {
-                        listener.lock().unwrap().unpause();
+                    if shared_state.lock().unwrap().is_paused() {
+                        shared_state.lock().unwrap().unpause();
                     }
                 }
                 _ => {
@@ -182,7 +155,7 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
         // Simply map the listener's frame buffer (updated by the main logic in a separate thread)
         // to the SDL canvas
         //
-        let graphic_memory = listener.lock().unwrap().graphic_memory();
+        let graphic_memory = shared_state.lock().unwrap().graphic_memory();
         let mut i: usize = 0;
         for ix in 0..Emulator::WIDTH {
             for iy in (0..Emulator::HEIGHT).step_by(8) {
@@ -206,10 +179,10 @@ pub fn sdl2(listener: &'static Mutex<EmulatorState>) -> Result<(), String> {
         }
 
         if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(500)) {
-            let paused = if listener.lock().unwrap().is_paused() { " - Paused" } else { "" };
+            let paused = if shared_state.lock().unwrap().is_paused() { " - Paused" } else { "" };
             canvas.window_mut().set_title(
                 format!("space-invade.rs - Cédric Beust - {:.2} Mhz{}",
-                        listener.lock().unwrap().get_megahertz(),
+                        shared_state.lock().unwrap().get_megahertz(),
                         paused)
                     .as_str()).unwrap();
             last_title_update = SystemTime::now();

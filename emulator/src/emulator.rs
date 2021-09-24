@@ -2,6 +2,16 @@ use crate::{opcodes, VERBOSE_DISASSEMBLE, VERBOSE_DISASSEMBLE_SECTION, DISASSEMB
 use crate::opcodes::*;
 use crate::memory::Memory;
 use crate::state::*;
+use crate::emulator_state::SharedState;
+use std::thread;
+use std::time::{SystemTime, Duration};
+
+use lazy_static::lazy_static;
+use std::sync::Mutex;
+
+lazy_static! {
+    pub(crate) static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState::new());
+}
 
 #[derive(PartialEq)]
 pub enum StepStatus {
@@ -29,9 +39,9 @@ impl Emulator<'_> {
     pub const HEIGHT: u16 = 256;
 
     pub fn new_space_invaders() -> Emulator<'static> {
-        let mut memory = Memory::new(None);
+        let mut memory = Memory::new(Some(&SHARED_STATE));
         memory.read_file("space-invaders.rom", 0);
-        Emulator::new(Box::new(memory), 0x100)
+        Emulator::new(Box::new(memory), 0)
     }
 
     pub fn new(memory: Box<Memory>, pc: usize) -> Emulator {
@@ -43,6 +53,42 @@ impl Emulator<'_> {
         }
     }
 
+    pub fn start_emulator() -> &'static Mutex<SharedState> {
+        //
+        // Spawn the game logic in a separate thread. This logic will communicate with the
+        // main thread (and therefore, the actual graphics on your screen) via the `listener`
+        // object that this function receives in parameter.
+        //
+        thread::spawn(move || {
+            let mut emulator = Emulator::new_space_invaders();
+            let time_per_frame_ms = 16;
+            loop {
+                let start = SystemTime::now();
+                // Run one frame
+                let cycles = emulator.run_one_frame(false);
+                let elapsed = start.elapsed().unwrap().as_millis();
+
+                // Wait until we reach 16ms before running the next frame.
+                // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
+                // which might explain why my game is going a bit too fast. I should actually
+                // rewrite this logic to guarantee that it runs every 16ms
+                if elapsed < time_per_frame_ms {
+                    std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
+                }
+                let after_sleep = start.elapsed().unwrap().as_micros();
+                if false {
+                    println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
+                             elapsed,
+                             after_sleep,
+                             cycles);
+                }
+
+                SHARED_STATE.lock().unwrap().set_megahertz(cycles as f64 / after_sleep as f64);
+            }
+        });
+
+        &SHARED_STATE
+    }
 
     pub fn run_one_frame(&mut self, verbose: bool) -> u64 {
         let mut total_cycles: u64 = 0;

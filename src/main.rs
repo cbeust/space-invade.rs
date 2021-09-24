@@ -1,17 +1,11 @@
-use emulator::emulator_state::EmulatorState;
+use emulator::emulator_state::SharedState;
 
-use lazy_static::lazy_static;
-use std::sync::Mutex;
 use std::time::{UNIX_EPOCH, SystemTime};
 
 mod sdl2;
 
-lazy_static! {
-    pub(crate) static ref STATIC_LISTENER: Mutex<EmulatorState> = Mutex::new(EmulatorState::new());
-}
-
 fn main() {
-    sdl2::sdl2(&STATIC_LISTENER).unwrap();
+    sdl2::sdl2().unwrap();
 }
 
 pub fn log_time(s: &str) {

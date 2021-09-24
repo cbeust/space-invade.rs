@@ -2,9 +2,9 @@ use std::fs::File;
 use std::io::Read;
 use crate::state::State;
 use crate::opcodes::Opcode;
-use crate::listener::Listener;
 use std::sync::{Mutex, RwLock};
 use lazy_static::lazy_static;
+use crate::emulator_state::SharedState;
 
 const MEMORY_SIZE: usize = 0x10000;
 pub const SCREEN_WIDTH: usize = 0x20;  // 0x20 bytes (256 pixels)
@@ -25,11 +25,11 @@ lazy_static! {
 
 pub struct Memory<'a> {
     pub verbose: bool,
-    pub listener: Option<&'a Mutex<dyn Listener>>,
+    pub listener: Option<&'a Mutex<SharedState>>,
 }
 
 impl<'a> Memory<'a> {
-    pub fn new(listener: Option<&'a Mutex<dyn Listener>>) -> Self {
+    pub fn new(listener: Option<&'a Mutex<SharedState>>) -> Self {
         Memory {
             verbose: false,
             listener,

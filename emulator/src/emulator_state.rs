@@ -1,11 +1,10 @@
 use crate::memory;
-use crate::listener::Listener;
 use crate::memory::GRAPHIC_MEMORY_SIZE;
 
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
-pub struct EmulatorState {
+pub struct SharedState {
     display: bool,
     megahertz: f64,
     in_1: u8,
@@ -15,9 +14,9 @@ pub struct EmulatorState {
 }
 
 #[wasm_bindgen]
-impl EmulatorState {
-    pub fn new() -> EmulatorState {
-        EmulatorState {
+impl SharedState {
+    pub fn new() -> SharedState {
+        SharedState {
             display: false,
             megahertz: 2.0,
             in_1: 8,   // bit 3 is always 1
@@ -27,8 +26,8 @@ impl EmulatorState {
     }
 }
 
-impl Listener for EmulatorState {
-    fn graphic_memory(&self) -> [u8; GRAPHIC_MEMORY_SIZE] {
+impl SharedState {
+    pub fn graphic_memory(&self) -> [u8; GRAPHIC_MEMORY_SIZE] {
         let mut result: [u8; GRAPHIC_MEMORY_SIZE] = [0; GRAPHIC_MEMORY_SIZE];
         let memory = memory::STATIC_MEMORY.read().unwrap();
         result.clone_from_slice(&memory[0x2400..0x2400 + GRAPHIC_MEMORY_SIZE]);
@@ -41,15 +40,15 @@ impl Listener for EmulatorState {
 
     fn is_vbl(&self) -> bool { self.display }
 
-    fn set_megahertz(&mut self, mhz: f64) {
+    pub fn set_megahertz(&mut self, mhz: f64) {
         self.megahertz = mhz;
     }
 
-    fn get_megahertz(&self) -> f64 {
+    pub fn get_megahertz(&self) -> f64 {
         self.megahertz
     }
 
-    fn set_bit_in_1(&mut self, bit: u8, value: bool) {
+    pub fn set_bit_in_1(&mut self, bit: u8, value: bool) {
         let mask = 1 << bit;
         if value {
             self.in_1 |= mask;
@@ -58,11 +57,11 @@ impl Listener for EmulatorState {
         }
     }
 
-    fn get_in_1(&self) -> u8 {
+    pub fn get_in_1(&self) -> u8 {
         self.in_1
     }
 
-    fn set_bit_in_2(&mut self, bit: u8, value: bool) {
+    pub fn set_bit_in_2(&mut self, bit: u8, value: bool) {
         let mask = 1 << bit;
         if value {
             self.in_2 |= mask;
@@ -71,11 +70,11 @@ impl Listener for EmulatorState {
         }
     }
 
-    fn get_in_2(&self) -> u8 {
+    pub fn get_in_2(&self) -> u8 {
         self.in_2
     }
 
-    fn is_paused(&self) -> bool { self.is_paused }
-    fn pause(&mut self) { self.is_paused = true; }
-    fn unpause(&mut self) { self.is_paused = false; }
+    pub fn is_paused(&self) -> bool { self.is_paused }
+    pub fn pause(&mut self) { self.is_paused = true; }
+    pub fn unpause(&mut self) { self.is_paused = false; }
 }
