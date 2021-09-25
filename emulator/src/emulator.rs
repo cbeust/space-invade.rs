@@ -5,9 +5,9 @@ use crate::state::*;
 use crate::emulator_state::SharedState;
 use std::thread;
 use std::time::{SystemTime, Duration};
-
 use lazy_static::lazy_static;
 use std::sync::Mutex;
+use wasm_bindgen::prelude::*;
 
 lazy_static! {
     pub(crate) static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState::new());
@@ -26,6 +26,7 @@ pub struct StepResult {
     pub cycles: u8,
 }
 
+#[wasm_bindgen]
 pub struct Emulator {
     memory: Box<Memory>,
     state: Option<State>,
@@ -34,9 +35,10 @@ pub struct Emulator {
     output_buffer: Vec<char>,
 }
 
+pub const WIDTH: u16 = 224;
+pub const HEIGHT: u16 = 256;
+
 impl Emulator {
-    pub const WIDTH: u16 = 224;
-    pub const HEIGHT: u16 = 256;
 
     pub fn new_space_invaders() -> Emulator {
         let mut memory = Memory::new();
@@ -53,6 +55,7 @@ impl Emulator {
         }
     }
 
+    #[cfg(not (target_arch = "wasm32"))]
     pub fn start_emulator() -> &'static Mutex<SharedState> {
         //
         // Spawn the game logic in a separate thread. This logic will communicate with the

@@ -6,7 +6,7 @@ use sdl2::rect::Rect;
 use emulator::memory::Memory;
 use std::thread;
 use std::sync::Mutex;
-use emulator::emulator::Emulator;
+use emulator::emulator::{Emulator, WIDTH, HEIGHT};
 use emulator::emulator_state::SharedState;
 
 const RECTANGLE_SIZE: u32 = 2;
@@ -19,7 +19,7 @@ pub fn sdl2() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let window = video_subsystem
-        .window("", Emulator::WIDTH as u32 * RECTANGLE_SIZE, Emulator::HEIGHT as u32 * RECTANGLE_SIZE)
+        .window("", WIDTH as u32 * RECTANGLE_SIZE, HEIGHT as u32 * RECTANGLE_SIZE)
         .position_centered()
         .resizable()
         .build()
@@ -154,13 +154,13 @@ pub fn sdl2() -> Result<(), String> {
         //
         let graphic_memory = shared_state.lock().unwrap().graphic_memory();
         let mut i: usize = 0;
-        for ix in 0..Emulator::WIDTH {
-            for iy in (0..Emulator::HEIGHT).step_by(8) {
+        for ix in 0..WIDTH {
+            for iy in (0..HEIGHT).step_by(8) {
                 let mut byte = graphic_memory[i];
                 i += 1;
                 for b in 0..8 {
                     let x: i32 = ix as i32 * RECTANGLE_SIZE as i32;
-                    let y: i32 = (Emulator::HEIGHT as i32 - (iy as i32+ b)) * RECTANGLE_SIZE as i32;
+                    let y: i32 = (HEIGHT as i32 - (iy as i32+ b)) * RECTANGLE_SIZE as i32;
                     let color = if byte & 1 == 0 { BLACK } else {
                         if iy > 200 && iy < 220 { RED }
                         else if iy < 80 { GREEN }
