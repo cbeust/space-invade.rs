@@ -1,8 +1,9 @@
 import * as wasm from "wasm-space-invaders";
 
-var sharedState = wasm.new_emulator();
+wasm.start_emulator();
+var memory = wasm.graphic_memory();
 
-console.log("Mhz: " + sharedState.megahertz);
+console.log("memory: " + memory[0]);
 
 // wasm.greet();
 

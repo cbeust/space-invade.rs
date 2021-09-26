@@ -43,6 +43,7 @@ dependencies = [
  "console_error_panic_hook",
  "lazy_static",
  "log",
+ "once_cell",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "wee_alloc",

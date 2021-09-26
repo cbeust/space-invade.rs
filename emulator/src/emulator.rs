@@ -6,11 +6,20 @@ use crate::emulator_state::SharedState;
 use std::thread;
 use std::time::{SystemTime, Duration};
 use lazy_static::lazy_static;
-use std::sync::Mutex;
+use std::sync::{Mutex, RwLock, MutexGuard};
 use wasm_bindgen::prelude::*;
+use once_cell::sync::OnceCell;
 
-lazy_static! {
-    pub(crate) static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState::new());
+static SHARED_STATE: OnceCell<Mutex<SharedState>> = OnceCell::new();
+
+// lazy_static! {
+//     pub(crate) static ref SHARED_STATE: Mutex<SharedState> = Mutex::new(SharedState::new());
+// }
+
+#[cfg(target_arch = "wasm32")]
+pub fn graphic_memory() -> Vec<u8> {
+    let memory = crate::memory::STATIC_MEMORY.read().unwrap();
+    memory[0x2400..0x2400 + crate::memory::GRAPHIC_MEMORY_SIZE].to_vec()
 }
 
 #[derive(PartialEq)]
@@ -38,6 +47,48 @@ pub struct Emulator {
 pub const WIDTH: u16 = 224;
 pub const HEIGHT: u16 = 256;
 
+#[wasm_bindgen(js_namespace = console)]
+pub fn start_emulator_wasm() {
+    println!("Starting emulator wasm");
+}
+
+#[wasm_bindgen]
+pub fn spawn_emulator() {
+    //
+    // Spawn the game logic in a separate thread. This logic will communicate with the
+    // main thread (and therefore, the actual graphics on your screen) via the `listener`
+    // object that this function receives in parameter.
+    //
+    thread::spawn(move || {
+        let mut emulator = Emulator::new_space_invaders();
+        let time_per_frame_ms = 16;
+        loop {
+            let start = SystemTime::now();
+            // Run one frame
+            let cycles = emulator.run_one_frame(false);
+            let elapsed = start.elapsed().unwrap().as_millis();
+
+            // Wait until we reach 16ms before running the next frame.
+            // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
+            // which might explain why my game is going a bit too fast. I should actually
+            // rewrite this logic to guarantee that it runs every 16ms
+            if elapsed < time_per_frame_ms {
+                std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
+            }
+            let after_sleep = start.elapsed().unwrap().as_micros();
+            if false {
+                println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
+                         elapsed,
+                         after_sleep,
+                         cycles);
+            }
+
+            SHARED_STATE.get().unwrap().lock().unwrap()
+                .set_megahertz(cycles as f64 / after_sleep as f64);
+        }
+    });
+}
+
 impl Emulator {
 
     pub fn new_space_invaders() -> Emulator {
@@ -55,42 +106,10 @@ impl Emulator {
         }
     }
 
-    #[cfg(not (target_arch = "wasm32"))]
     pub fn start_emulator() -> &'static Mutex<SharedState> {
-        //
-        // Spawn the game logic in a separate thread. This logic will communicate with the
-        // main thread (and therefore, the actual graphics on your screen) via the `listener`
-        // object that this function receives in parameter.
-        //
-        thread::spawn(move || {
-            let mut emulator = Emulator::new_space_invaders();
-            let time_per_frame_ms = 16;
-            loop {
-                let start = SystemTime::now();
-                // Run one frame
-                let cycles = emulator.run_one_frame(false);
-                let elapsed = start.elapsed().unwrap().as_millis();
-
-                // Wait until we reach 16ms before running the next frame.
-                // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
-                // which might explain why my game is going a bit too fast. I should actually
-                // rewrite this logic to guarantee that it runs every 16ms
-                if elapsed < time_per_frame_ms {
-                    std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
-                }
-                let after_sleep = start.elapsed().unwrap().as_micros();
-                if false {
-                    println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
-                             elapsed,
-                             after_sleep,
-                             cycles);
-                }
-
-                SHARED_STATE.lock().unwrap().set_megahertz(cycles as f64 / after_sleep as f64);
-            }
-        });
-
-        &SHARED_STATE
+        SHARED_STATE.set(Mutex::new(SharedState::new()));
+        spawn_emulator();
+        &SHARED_STATE.get().unwrap()
     }
 
     pub fn run_one_frame(&mut self, verbose: bool) -> u64 {
@@ -110,7 +129,7 @@ impl Emulator {
     }
 
     pub fn step(&mut self, verbose: bool) -> StepResult {
-        if SHARED_STATE.lock().unwrap().is_paused() {
+        if SHARED_STATE.get().unwrap().lock().unwrap().is_paused() {
             return StepResult { status: StepStatus::Paused, cycles: 0 };
         }
 
@@ -1240,10 +1259,10 @@ impl Emulator {
             opcodes::IN => {
                 match byte1 {
                     1 => {
-                        state.psw.a = SHARED_STATE.lock().unwrap().get_in_1();
+                        state.psw.a = SHARED_STATE.get().unwrap().lock().unwrap().get_in_1();
                     },
                     2 => {
-                        state.psw.a = SHARED_STATE.lock().unwrap().get_in_2();
+                        state.psw.a = SHARED_STATE.get().unwrap().lock().unwrap().get_in_2();
                     },
                     3 => {
                         let shift_amount = 8 - self.shift_register_offset;

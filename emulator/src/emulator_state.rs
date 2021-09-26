@@ -27,6 +27,7 @@ impl SharedState {
 }
 
 impl SharedState {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn graphic_memory(&self) -> [u8; GRAPHIC_MEMORY_SIZE] {
         let mut result: [u8; GRAPHIC_MEMORY_SIZE] = [0; GRAPHIC_MEMORY_SIZE];
         let memory = memory::STATIC_MEMORY.read().unwrap();
