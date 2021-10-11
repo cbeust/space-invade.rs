@@ -8,5 +8,5 @@ wasm-pack build
 Run with:
 
 ```
-npm run
+npm run start
 ```
