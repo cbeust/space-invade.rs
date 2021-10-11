@@ -3,6 +3,7 @@ mod utils;
 use wasm_bindgen::prelude::*;
 use emulator::emulator_state::*;
 use emulator::emulator::Emulator;
+use emulator::emulator::*;
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -28,7 +29,7 @@ pub fn greet() {
 #[wasm_bindgen]
 pub fn start_emulator() {
     log("Starting em#1");
-    emulator::spawn_emulator();
+    emulator::emulator::spawn_emulator();
 }
 
 #[wasm_bindgen]
