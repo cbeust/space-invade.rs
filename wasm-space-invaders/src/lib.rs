@@ -28,8 +28,9 @@ pub fn greet() {
 
 #[wasm_bindgen]
 pub fn start_emulator() {
-    log("Starting em#1");
+    log("Spawning the emulator...");
     emulator::emulator::spawn_emulator();
+    log("... done!");
 }
 
 #[wasm_bindgen]

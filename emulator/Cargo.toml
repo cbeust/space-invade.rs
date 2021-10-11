@@ -10,6 +10,7 @@ once_cell = "1.8.0"
 lazy_static = "1.4.0"
 log = "0.4"
 wasm-bindgen = "0.2.63"
+wasm-timer = "0.2.5"
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
