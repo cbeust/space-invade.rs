@@ -55,46 +55,75 @@ pub fn start_emulator_wasm() {
 
 #[wasm_bindgen]
 pub fn spawn_emulator() {
+    let mut emulator = Emulator::new_space_invaders();
+    let time_per_frame_ms = 16;
+    loop {
+        let start = SystemTime::now();
+        // Run one frame
+        let cycles = emulator.run_one_frame(false);
+        let elapsed = start.elapsed().unwrap().as_millis();
+
+        // Wait until we reach 16ms before running the next frame.
+        // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
+        // which might explain why my game is going a bit too fast. I should actually
+        // rewrite this logic to guarantee that it runs every 16ms
+        if elapsed < time_per_frame_ms {
+            std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
+        }
+        let after_sleep = start.elapsed().unwrap().as_micros();
+        if false {
+            println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
+                     elapsed,
+                     after_sleep,
+                     cycles);
+        }
+
+        SHARED_STATE.get().unwrap().lock().unwrap()
+            .set_megahertz(cycles as f64 / after_sleep as f64);
+    }
+}
+
+pub fn spawn_emulator_thread() {
     //
     // Spawn the game logic in a separate thread. This logic will communicate with the
     // main thread (and therefore, the actual graphics on your screen) via the `listener`
     // object that this function receives in parameter.
     //
     thread::spawn(move || {
-        let mut emulator = Emulator::new_space_invaders();
-        let time_per_frame_ms = 16;
-        loop {
-            let start = SystemTime::now();
-            // Run one frame
-            let cycles = emulator.run_one_frame(false);
-            let elapsed = start.elapsed().unwrap().as_millis();
-
-            // Wait until we reach 16ms before running the next frame.
-            // TODO: I'm not 100% sure the event pump is being invoked on a 16ms cadence,
-            // which might explain why my game is going a bit too fast. I should actually
-            // rewrite this logic to guarantee that it runs every 16ms
-            if elapsed < time_per_frame_ms {
-                std::thread::sleep(Duration::from_millis((time_per_frame_ms - elapsed) as u64));
-            }
-            let after_sleep = start.elapsed().unwrap().as_micros();
-            if false {
-                println!("Actual time frame: {}ms, after sleep: {} ms, cycles: {}",
-                         elapsed,
-                         after_sleep,
-                         cycles);
-            }
-
-            SHARED_STATE.get().unwrap().lock().unwrap()
-                .set_megahertz(cycles as f64 / after_sleep as f64);
-        }
+        spawn_emulator();
     });
+}
+
+#[wasm_bindgen]
+extern {
+    // Use `js_namespace` here to bind `console.log(..)` instead of just
+    // `log(..)`
+    #[cfg(target_arch = "wasm32")]
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
+
+// #[cfg(target_arch = "wasm32")]
+// pub fn log(s: &str) {
+//     javascript_log(s);
+// }
+
+#[cfg(not(target_arch = "wasm32"))]
+pub fn log(s: &str) {
+    println!("{}", s);
 }
 
 impl Emulator {
 
     pub fn new_space_invaders() -> Emulator {
         let mut memory = Memory::new();
+        #[cfg(not(target_arch = "wasm32"))]
         memory.read_file("space-invaders.rom", 0);
+
+        #[cfg(target_arch = "wasm32")]
+        log("Warning: need to read the rom file in WASM mode");
+
         Emulator::new(Box::new(memory), 0)
     }
 
@@ -109,7 +138,7 @@ impl Emulator {
 
     pub fn start_emulator() -> &'static Mutex<SharedState> {
         SHARED_STATE.set(Mutex::new(SharedState::new()));
-        spawn_emulator();
+        spawn_emulator_thread();
         &SHARED_STATE.get().unwrap()
     }
 
@@ -130,7 +159,8 @@ impl Emulator {
     }
 
     pub fn step(&mut self, verbose: bool) -> StepResult {
-        if SHARED_STATE.get().unwrap().lock().unwrap().is_paused() {
+        let shared = SHARED_STATE.get().unwrap();
+        if shared.lock().unwrap().is_paused() {
             return StepResult { status: StepStatus::Paused, cycles: 0 };
         }
 

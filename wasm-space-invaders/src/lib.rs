@@ -28,8 +28,8 @@ pub fn greet() {
 
 #[wasm_bindgen]
 pub fn start_emulator() {
-    log("Spawning the emulator...");
-    emulator::emulator::spawn_emulator();
+    log("Initializing shared state");
+    let _ = Emulator::start_emulator();
     log("... done!");
 }
 
