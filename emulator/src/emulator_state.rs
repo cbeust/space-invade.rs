@@ -5,7 +5,6 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 pub struct SharedState {
-    display: bool,
     megahertz: f64,
     in_1: u8,
     in_2: u8,
@@ -17,7 +16,6 @@ pub struct SharedState {
 impl SharedState {
     pub fn new() -> SharedState {
         SharedState {
-            display: false,
             megahertz: 2.0,
             in_1: 8,   // bit 3 is always 1
             in_2: 0,
@@ -34,12 +32,6 @@ impl SharedState {
         result.clone_from_slice(&memory[0x2400..0x2400 + GRAPHIC_MEMORY_SIZE]);
         result
     }
-
-    fn set_vbl(&mut self, value: bool) {
-        self.display = value;
-    }
-
-    fn is_vbl(&self) -> bool { self.display }
 
     pub fn set_megahertz(&mut self, mhz: f64) {
         self.megahertz = mhz;

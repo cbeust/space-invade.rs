@@ -1,5 +1,3 @@
-use emulator::emulator_state::SharedState;
-
 use std::time::{UNIX_EPOCH, SystemTime};
 
 mod sdl2;

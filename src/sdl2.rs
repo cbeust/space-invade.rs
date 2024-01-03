@@ -3,11 +3,7 @@ use sdl2::event::Event;
 use sdl2::pixels::Color;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
-use emulator::memory::Memory;
-use std::thread;
-use std::sync::Mutex;
 use emulator::emulator::{Emulator, WIDTH, HEIGHT};
-use emulator::emulator_state::SharedState;
 
 const RECTANGLE_SIZE: u32 = 2;
 const WHITE: Color = Color::RGB(255, 255, 255);
@@ -169,7 +165,7 @@ pub fn sdl2() -> Result<(), String> {
                     byte >>= 1;
 
                     canvas.set_draw_color(color);
-                    canvas.fill_rect(Rect::new(x, y, RECTANGLE_SIZE as u32, RECTANGLE_SIZE as u32))
+                    canvas.fill_rect(Rect::new(x, y, RECTANGLE_SIZE, RECTANGLE_SIZE))
                         .unwrap();
                 }
             }

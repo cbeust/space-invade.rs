@@ -2,9 +2,8 @@ use std::fs::File;
 use std::io::Read;
 use crate::state::State;
 use crate::opcodes::Opcode;
-use std::sync::{Mutex, RwLock};
+use std::sync::{RwLock};
 use lazy_static::lazy_static;
-use crate::emulator_state::SharedState;
 
 const MEMORY_SIZE: usize = 0x10000;
 pub const SCREEN_WIDTH: usize = 0x20;  // 0x20 bytes (256 pixels)
@@ -32,10 +31,6 @@ impl Memory {
         Memory {
             verbose: false,
         }
-    }
-
-    pub(crate) fn set_verbose(&mut self, v: bool) {
-        self.verbose = v;
     }
 
     pub fn read_file(&mut self, file_name: &str, start: usize) {
