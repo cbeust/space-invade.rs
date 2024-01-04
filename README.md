@@ -14,7 +14,7 @@ experiment with a different design and see how far I could push the performance.
 
 ## Running the emulator
 
-On Windows, you can just `cargo run --release` (make sure you have `SDL2.dll` in the current directory).
+On Windows, you can just `cargo run --release` (make sure you have [`SDL2.dll`](https://github.com/libsdl-org/SDL/releases) in the current directory).
 
 On macOS, you will need to install SDL2 first (`brew install sdl2`).
 
