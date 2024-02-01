@@ -68,8 +68,7 @@ The main logic is in the file [`sdl2.rs`](https://github.com/cbeust/space-invade
 spawns the emulator in a separate thread. That thread updates the graphic memory which the SDL 2 main loop uses
 to draw the graphics on the main screen.
 
-The emulator is calibrated to run at 2Mhz with the following logic, which you will find in
-`run_one_frame()` in [emulator.rs](https://github.com/cbeust/space-invade.rs/blob/main/src/emulator.rs#L43-L57):
+The emulator is calibrated to run at 2Mhz with the following logic, which you will find in the [`run_one_frame()`](https://github.com/cbeust/space-invade.rs/blob/main/emulator/src/emulator.rs#L143-L157) function:
 
 - Run as many cycles as necessary to reach the first half of the screen (about 16,500)
 - Generate the first interrupt
