@@ -133,5 +133,5 @@ The following documentation was invaluable to pull off this fun project:
 - [8080 Reference Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)
 - [Emulator 101](http://www.emulator101.com/)  (note: not `https`)
 - [Space Invaders assembly listing](https://computerarcheology.com/Arcade/SpaceInvaders/Code.html)
-- [cpudiag assembly listing](https://github.com/cbeust/space-invade.rs/blob/main/cpudiag.lst)
+- [cpudiag assembly listing](https://github.com/cbeust/space-invade.rs/blob/main/emulator/cpudiag.lst)
  
