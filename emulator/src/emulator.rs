@@ -1339,6 +1339,7 @@ impl Emulator {
 
     fn interrupt(&mut self, interrupt_number: u8) {
         if self.state.as_ref().unwrap().enable_interrupts {
+            self.state.as_mut().unwrap().enable_interrupts = false;
             // log_time(format!("Interrupt {}", interrupt_number).as_str());
             let state = self.state.as_mut().unwrap();
             self.memory.write(state.sp - 1, ((state.pc as u16 & 0xff00) >> 8) as u8);
