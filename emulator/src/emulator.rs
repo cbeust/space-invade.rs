@@ -142,7 +142,7 @@ impl Emulator {
 
     pub fn run_one_frame(&mut self, verbose: bool) -> u64 {
         let mut total_cycles: u64 = 0;
-        let cycle_max = 33_000;
+        let cycle_max = 2_000_000 / 60;
         while total_cycles < cycle_max / 2 {
             total_cycles += self.step(verbose).cycles as u64;
         }
