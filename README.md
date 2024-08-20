@@ -69,8 +69,7 @@ The main logic is in the file [`sdl2.rs`](https://github.com/cbeust/space-invade
 spawns the emulator in a separate thread. That thread updates the graphic memory which the SDL 2 main loop uses
 to draw the graphics on the main screen.
 
-The emulator is calibrated to run at 2Mhz with the following logic, which you will find in
-`run_one_frame()` in [emulator.rs](https://github.com/cbeust/space-invade.rs/blob/main/src/emulator.rs#L43-L57):
+The emulator is calibrated to run at 2Mhz with the following logic, which you will find in the [`run_one_frame()`](https://github.com/cbeust/space-invade.rs/blob/main/emulator/src/emulator.rs#L143-L157) function:
 
 - Run as many cycles as necessary to reach the first half of the screen (about 16,500)
 - Generate the first interrupt
@@ -135,5 +134,5 @@ The following documentation was invaluable to pull off this fun project:
 - [8080 Reference Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)
 - [Emulator 101](http://www.emulator101.com/)  (note: not `https`)
 - [Space Invaders assembly listing](https://computerarcheology.com/Arcade/SpaceInvaders/Code.html)
-- [cpudiag assembly listing](https://github.com/cbeust/space-invade.rs/blob/main/cpudiag.lst)
+- [cpudiag assembly listing](https://github.com/cbeust/space-invade.rs/blob/main/emulator/cpudiag.lst)
  
