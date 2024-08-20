@@ -24,11 +24,12 @@ I haven't tested on Linux.
 
 ## Playing it
 
-- Press `C` to insert a coin.
-- Press `1` or `2` to select the number of players.
+- `c` to insert a coin.
+- `1` or `2` to select the number of players.
 - Player 1: left and right arrows to move, space to shoot.
 - Player 2: `a` and `d` to move, `s` to shoot.
-- 'p' will pause the game, any key will resume.
+- `p` will pause the game, any key will resume.
+- `t` to cause a tilt.
 - `ESC` to close the window.
 
 ## The 8080 processor

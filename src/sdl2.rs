@@ -60,6 +60,11 @@ pub fn sdl2() -> Result<(), String> {
                     }
                 },
 
+                // Tilt
+                Event::KeyDown { keycode: Some(Keycode::T), .. } => {
+                    shared_state.lock().unwrap().set_bit_in_2(2, true);
+                },
+
                 // Insert coin
                 Event::KeyDown { keycode: Some(Keycode::C), .. } => {
                     shared_state.lock().unwrap().set_bit_in_1(0, true);
