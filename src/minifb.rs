@@ -1,4 +1,5 @@
-use minifb::{Key, Window, WindowOptions};
+use std::time::{Duration, SystemTime};
+use minifb::{Key, KeyRepeat, Window, WindowOptions};
 use emulator::emulator::{HEIGHT, WIDTH};
 use emulator::memory::{GRAPHIC_MEMORY_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH};
 
@@ -20,19 +21,137 @@ pub fn run_minifb() {
     options.resize = true;
     let mut window = Window::new(
         "Test - ESC to exit",
-        width * 2,
-        height * 2,
+        width * 3,
+        height * 3,
         options
     )
         .unwrap_or_else(|e| {
             panic!("{}", e);
         });
 
+    // Only update the title every one second or so
+    let mut last_title_update = SystemTime::now();
+
     // Limit to max ~60 fps update rate
     window.set_target_fps(60);
 
-    println!("Graphic memory is {SCREEN_WIDTH} x {SCREEN_HEIGHT} = {}", SCREEN_WIDTH * SCREEN_HEIGHT);
     while window.is_open() && !window.is_key_down(Key::Escape) {
+
+        //
+        // Check for key events
+        //
+        let keys_released: Vec<Key> = window.get_keys_released();
+
+        for key in keys_released {
+            match key {
+                Key::Right => {
+                    // Player 1 moved right
+                    shared_state.lock().unwrap().set_bit_in_1(6, false);
+                }
+                Key::Left => {
+                    // Player 1 moved left
+                    shared_state.lock().unwrap().set_bit_in_1(5, false);
+                }
+                Key::Space => {
+                    // Player 1 shot
+                    shared_state.lock().unwrap().set_bit_in_1(4, false);
+                }
+                Key::A => {
+                    // Player 2 moved left
+                    shared_state.lock().unwrap().set_bit_in_2(5, false);
+                }
+                Key::D => {
+                    // Player 2 moved right
+                    shared_state.lock().unwrap().set_bit_in_2(6, false);
+                }
+                Key::S => {
+                    // Player 2 shot
+                    shared_state.lock().unwrap().set_bit_in_2(4, false);
+                }
+                Key::NumPad1 => {
+                    // Start 1 player
+                    shared_state.lock().unwrap().set_bit_in_1(2, false);
+                }
+                Key::NumPad2 => {
+                    // Start 2 players
+                    shared_state.lock().unwrap().set_bit_in_1(1, false);
+                }
+                Key::C => {
+                    // Insert coin
+                    shared_state.lock().unwrap().set_bit_in_1(0, false);
+                }
+                _ => {}
+            }
+        }
+
+        let keys_pressed: Vec<Key> = window.get_keys_pressed(KeyRepeat::No);
+        for key in keys_pressed {
+            match key {
+                Key::Right => {
+                    // Player 1 moved right
+                    shared_state.lock().unwrap().set_bit_in_1(6, true);
+                }
+                Key::Left => {
+                    // Player 1 moved left
+                    shared_state.lock().unwrap().set_bit_in_1(5, true);
+                }
+                Key::Space => {
+                    // Player 1 shot or unpause
+                    if shared_state.lock().unwrap().is_paused() {
+                        shared_state.lock().unwrap().unpause();
+                    } else {
+                        shared_state.lock().unwrap().set_bit_in_1(4, true);
+                    }
+                }
+                Key::A => {
+                    // Player 2 moved left
+                    shared_state.lock().unwrap().set_bit_in_2(5, true);
+                }
+                Key::D => {
+                    // Player 2 moved right
+                    shared_state.lock().unwrap().set_bit_in_2(6, true);
+                }
+                Key::S => {
+                    // Player 2 shot
+                    shared_state.lock().unwrap().set_bit_in_2(4, true);
+                }
+                Key::NumPad1 => {
+                    // Start 1 player
+                    shared_state.lock().unwrap().set_bit_in_1(2, true);
+                }
+                Key::NumPad2 => {
+                    // Start 2 players
+                    shared_state.lock().unwrap().set_bit_in_1(1, true);
+                }
+                Key::C => {
+                    // Insert coin
+                    shared_state.lock().unwrap().set_bit_in_1(0, true);
+                }
+                Key::P => {
+                    // Pause
+                    let mut l = shared_state.lock().unwrap();
+                    if l.is_paused() {
+                        l.unpause();
+                    } else {
+                        l.pause();
+                    }
+                }
+                Key::T => {
+                    // Tilt
+                    shared_state.lock().unwrap().set_bit_in_2(2, true);
+                }
+                _ => {
+                    // If the emulator is paused, any key will unpause it
+                    if shared_state.lock().unwrap().is_paused() {
+                        shared_state.lock().unwrap().unpause();
+                    }
+                }
+            }
+        }
+
+        //
+        // Update the graphics
+        //
         let graphic_memory: [u8; GRAPHIC_MEMORY_SIZE] = shared_state.lock().unwrap().graphic_memory();
 
         let mut i: usize = 0;
@@ -59,6 +178,16 @@ pub fn run_minifb() {
         window
             .update_with_buffer(&buffer, width, height)
             .unwrap();
+
+        if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(1000)) {
+            let paused = if shared_state.lock().unwrap().is_paused() { " - Paused" } else { "" };
+            window.set_title(
+                format!("space-invade.rs - Cédric Beust - {:.2} Mhz{}",
+                    shared_state.lock().unwrap().get_megahertz(),
+                    paused)
+                    .as_str());
+            last_title_update = SystemTime::now();
+        }
     }
 
 }
