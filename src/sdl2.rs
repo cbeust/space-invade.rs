@@ -5,7 +5,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use emulator::emulator::{Emulator, WIDTH, HEIGHT};
 
-const RECTANGLE_SIZE: u32 = 2;
+const RECTANGLE_SIZE: u32 = 1;
 const WHITE: Color = Color::RGB(255, 255, 255);
 const BLACK: Color = Color::RGB(0, 0, 0);
 const RED: Color = Color::RGB(255, 0, 0);
@@ -169,6 +169,7 @@ pub fn sdl2() -> Result<(), String> {
                     };
                     byte >>= 1;
 
+                    println!("Index {}: {x},{y}", i - 1);
                     canvas.set_draw_color(color);
                     canvas.fill_rect(Rect::new(x, y, RECTANGLE_SIZE, RECTANGLE_SIZE))
                         .unwrap();
