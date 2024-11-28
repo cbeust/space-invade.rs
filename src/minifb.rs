@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::{Duration, SystemTime};
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
 use emulator::emulator::{HEIGHT, WIDTH};
@@ -10,7 +11,27 @@ const GREEN: u32 = 0x0000ff00;
 const WHITE: u32 = 0xffffff;
 const BLACK: u32 = 0;
 
+struct Mapping {
+    input_channel: u8,
+    bit: u8,
+}
+
+impl Mapping {
+    fn new(input_channel: u8, bit: u8) -> Self { Self { input_channel, bit }}
+}
+
 pub fn run_minifb() {
+    let mut mappings: HashMap<Key, Mapping> = HashMap::new();
+    mappings.insert(Key::C, Mapping::new(1, 0)); // Insert coin
+    mappings.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
+    mappings.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
+    mappings.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
+    mappings.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
+    mappings.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
+    mappings.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
+    mappings.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
+    mappings.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+
     let shared_state = emulator::emulator::Emulator::start_emulator();
 
     let width = WIDTH as usize;
@@ -37,113 +58,54 @@ pub fn run_minifb() {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
 
+
+        let update_state = |key: Key, bit: bool| {
+            if let Some(mapping) = mappings.get(&key) {
+                let state = &mut shared_state.lock().unwrap();
+                if mapping.input_channel == 1 {
+                    state.set_bit_in_1(mapping.bit, bit);
+                } else {
+                    state.set_bit_in_2(mapping.bit, bit);
+                }
+                true
+            } else {
+                false
+            }
+        };
+
         //
         // Check for key events
         //
-        let keys_released: Vec<Key> = window.get_keys_released();
 
+        // Released keys
+        let keys_released: Vec<Key> = window.get_keys_released();
         for key in keys_released {
-            match key {
-                Key::Right => {
-                    // Player 1 moved right
-                    shared_state.lock().unwrap().set_bit_in_1(6, false);
-                }
-                Key::Left => {
-                    // Player 1 moved left
-                    shared_state.lock().unwrap().set_bit_in_1(5, false);
-                }
-                Key::Space => {
-                    // Player 1 shot
-                    shared_state.lock().unwrap().set_bit_in_1(4, false);
-                }
-                Key::A => {
-                    // Player 2 moved left
-                    shared_state.lock().unwrap().set_bit_in_2(5, false);
-                }
-                Key::D => {
-                    // Player 2 moved right
-                    shared_state.lock().unwrap().set_bit_in_2(6, false);
-                }
-                Key::S => {
-                    // Player 2 shot
-                    shared_state.lock().unwrap().set_bit_in_2(4, false);
-                }
-                Key::NumPad1 => {
-                    // Start 1 player
-                    shared_state.lock().unwrap().set_bit_in_1(2, false);
-                }
-                Key::NumPad2 => {
-                    // Start 2 players
-                    shared_state.lock().unwrap().set_bit_in_1(1, false);
-                }
-                Key::C => {
-                    // Insert coin
-                    shared_state.lock().unwrap().set_bit_in_1(0, false);
-                }
-                _ => {}
-            }
+            update_state(key, false);
         }
 
+        // Pressed keys
         let keys_pressed: Vec<Key> = window.get_keys_pressed(KeyRepeat::No);
         for key in keys_pressed {
-            match key {
-                Key::Right => {
-                    // Player 1 moved right
-                    shared_state.lock().unwrap().set_bit_in_1(6, true);
-                }
-                Key::Left => {
-                    // Player 1 moved left
-                    shared_state.lock().unwrap().set_bit_in_1(5, true);
-                }
-                Key::Space => {
-                    // Player 1 shot or unpause
-                    if shared_state.lock().unwrap().is_paused() {
-                        shared_state.lock().unwrap().unpause();
-                    } else {
-                        shared_state.lock().unwrap().set_bit_in_1(4, true);
+            if ! update_state(key, true) {
+                match key {
+                    Key::P => {
+                        // Pause
+                        let mut l = shared_state.lock().unwrap();
+                        if l.is_paused() {
+                            l.unpause();
+                        } else {
+                            l.pause();
+                        }
                     }
-                }
-                Key::A => {
-                    // Player 2 moved left
-                    shared_state.lock().unwrap().set_bit_in_2(5, true);
-                }
-                Key::D => {
-                    // Player 2 moved right
-                    shared_state.lock().unwrap().set_bit_in_2(6, true);
-                }
-                Key::S => {
-                    // Player 2 shot
-                    shared_state.lock().unwrap().set_bit_in_2(4, true);
-                }
-                Key::NumPad1 => {
-                    // Start 1 player
-                    shared_state.lock().unwrap().set_bit_in_1(2, true);
-                }
-                Key::NumPad2 => {
-                    // Start 2 players
-                    shared_state.lock().unwrap().set_bit_in_1(1, true);
-                }
-                Key::C => {
-                    // Insert coin
-                    shared_state.lock().unwrap().set_bit_in_1(0, true);
-                }
-                Key::P => {
-                    // Pause
-                    let mut l = shared_state.lock().unwrap();
-                    if l.is_paused() {
-                        l.unpause();
-                    } else {
-                        l.pause();
+                    Key::T => {
+                        // Tilt
+                        shared_state.lock().unwrap().set_bit_in_2(2, true);
                     }
-                }
-                Key::T => {
-                    // Tilt
-                    shared_state.lock().unwrap().set_bit_in_2(2, true);
-                }
-                _ => {
-                    // If the emulator is paused, any key will unpause it
-                    if shared_state.lock().unwrap().is_paused() {
-                        shared_state.lock().unwrap().unpause();
+                    _ => {
+                        // If the emulator is paused, any key will unpause it
+                        if shared_state.lock().unwrap().is_paused() {
+                            shared_state.lock().unwrap().unpause();
+                        }
                     }
                 }
             }
