@@ -7,7 +7,9 @@
 
 </p>
 
-This is an 8080 emulator running the 1978 Space Invaders game by Taito, written in Rust. `space-invade.rs` is my third
+This is an 8080 emulator running the 1978 Space Invaders game by Taito, written in Rust, including sound.
+
+`space-invade.rs` is my third
 emulator (the first one was [Chip-8](https://github.com/cbeust/chip-8) and then an
 [Apple \]\[ emulator](https://github.com/cbeust/sixty), both written in Kotlin). I chose Rust for this project to
 experiment with a different design and see how far I could push the performance.
@@ -117,9 +119,6 @@ GUI's and graphics in Rust on Windows is not exactly a walk in the park.
 I'm probably done with this project but if I were to come back to it to improve it, I would probably:
 
 - Make it run in the browser with WASM
-- Sound
-- The graphics still seem a bit janky to me, I'm probably doing something wrong in the SDL 2 event handling
-- Make it do less busy waiting
 - Show the controls so the user doesn't have to guess
 - Add a debugger, breakpoints, etc...
 
