@@ -1268,14 +1268,27 @@ impl Emulator {
                         self.shift_register_offset = state.psw.a & 0x7;
                     },
                     3 => {
-                        // sound
+                        // Port 3: (discrete sounds)
+                        //  bit 0=UFO (repeats)        SX0 0.raw
+                        //  bit 1=Shot                 SX1 1.raw
+                        //  bit 2=Flash (player die)   SX2 2.raw
+                        //  bit 3=Invader die          SX3 3.raw
+                        //  bit 4=Extended play        SX4
+                        //  bit 5= AMP enable          SX5
+                        println!("OUT 5 CALLED, SOUND: {byte2}");
                     },
                     4 => {
                         self.shift_register = ((state.psw.a as u16) << 8)
                             | (self.shift_register >> 8)
                     },
                     5 => {
-                        // sound
+                        // Port 5:
+                        //  bit 0=Fleet movement 1     SX6 4.raw
+                        //  bit 1=Fleet movement 2     SX7 5.raw
+                        //  bit 2=Fleet movement 3     SX8 6.raw
+                        //  bit 3=Fleet movement 4     SX9 7.raw
+                        //  bit 4=UFO Hit              SX10 8.raw
+                        println!("OUT 5 CALLED, SOUND: {byte2}");
                     },
                     6 => {
                         // watch dog
