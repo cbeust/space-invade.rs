@@ -1,8 +1,15 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 use std::time::{Duration, SystemTime};
+
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
+
 use emulator::emulator::{HEIGHT, WIDTH};
-use emulator::memory::{GRAPHIC_MEMORY_SIZE, SCREEN_HEIGHT, SCREEN_WIDTH};
+use emulator::memory::GRAPHIC_MEMORY_SIZE;
+
+use crate::sounds::{Message, Sound, SoundType};
 
 const MAGNIFICATION: usize = 1;
 
@@ -21,16 +28,23 @@ impl Mapping {
 }
 
 pub fn run_minifb() {
-    let mut mappings: HashMap<Key, Mapping> = HashMap::new();
-    mappings.insert(Key::C, Mapping::new(1, 0)); // Insert coin
-    mappings.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
-    mappings.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
-    mappings.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
-    mappings.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
-    mappings.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
-    mappings.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
-    mappings.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
-    mappings.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+    let mut key_mappings: HashMap<Key, Mapping> = HashMap::new();
+    key_mappings.insert(Key::C, Mapping::new(1, 0)); // Insert coin
+    key_mappings.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
+    key_mappings.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
+    key_mappings.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
+    key_mappings.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
+    key_mappings.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
+    key_mappings.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
+    key_mappings.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
+    key_mappings.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+
+    let (sender, receiver): (Sender<Message>, Receiver<Message>)  = mpsc::channel();
+    let sound = Sound::new(receiver);
+    let mut sounds: HashSet<SoundType> = HashSet::new();
+    thread::spawn(move || {
+        sound.run();
+    });
 
     let shared_state = emulator::emulator::Emulator::start_emulator();
 
@@ -57,10 +71,8 @@ pub fn run_minifb() {
     window.set_target_fps(60);
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-
-
         let update_state = |key: Key, bit: bool| {
-            if let Some(mapping) = mappings.get(&key) {
+            if let Some(mapping) = key_mappings.get(&key) {
                 let state = &mut shared_state.lock().unwrap();
                 if mapping.input_channel == 1 {
                     state.set_bit_in_1(mapping.bit, bit);
@@ -135,11 +147,40 @@ pub fn run_minifb() {
             }
         }
 
-        // We unwrap here as we want this code to exit if it fails.
-        // Real applications may want to handle this in a different way
-        window
-            .update_with_buffer(&buffer, width, height)
+        window.update_with_buffer(&buffer, width, height)
             .unwrap();
+
+        //
+        // Process sounds
+        //
+        let mut maybe_send = |value: u8, bit: u8, sound_type: SoundType| {
+            let sound2 = sound_type.clone();
+            let is_playing = sounds.contains(&sound2);
+            let on = (value & (1 << bit)) != 0;
+            if on {
+                sounds.insert(sound2);
+            } else {
+                sounds.remove(&sound2);
+            }
+            if (on && ! is_playing) || (!on && is_playing) {
+                match sender.send(Message { sound_type, on }) {
+                    Ok(_) => { println!("Sound sent") }
+                    Err(e) => { println!("Err: {e}") }
+                }
+            }
+        };
+
+        maybe_send(shared_state.lock().unwrap().get_out_3(), 0, SoundType::Ufo);
+        maybe_send(shared_state.lock().unwrap().get_out_3(), 1, SoundType::Fire);
+        maybe_send(shared_state.lock().unwrap().get_out_3(), 2, SoundType::PlayerDies);
+        maybe_send(shared_state.lock().unwrap().get_out_3(), 3, SoundType::InvaderDies);
+
+        maybe_send(shared_state.lock().unwrap().get_out_5(), 0, SoundType::Invader1);
+        maybe_send(shared_state.lock().unwrap().get_out_5(), 1, SoundType::Invader2);
+        maybe_send(shared_state.lock().unwrap().get_out_5(), 2, SoundType::Invader3);
+        maybe_send(shared_state.lock().unwrap().get_out_5(), 3, SoundType::Invader4);
+        maybe_send(shared_state.lock().unwrap().get_out_5(), 4, SoundType::UfoHit);
+
 
         if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(1000)) {
             let paused = if shared_state.lock().unwrap().is_paused() { " - Paused" } else { "" };

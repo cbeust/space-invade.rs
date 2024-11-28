@@ -13,4 +13,5 @@ once_cell = { version = "1.8.0" }
 lazy_static = "1.4.0"
 emulator = { path = "emulator" }
 minifb = "0.27.0"
+rodio = "0.20.1"
 

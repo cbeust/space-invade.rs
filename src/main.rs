@@ -3,6 +3,7 @@ use crate::minifb::run_minifb;
 
 // mod sdl2;
 mod minifb;
+mod sounds;
 
 fn main() {
     run_minifb();
