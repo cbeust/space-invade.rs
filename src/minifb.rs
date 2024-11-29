@@ -39,6 +39,8 @@ pub fn run_minifb() {
     key_mappings.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
     key_mappings.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
 
+    println!("Press 'c', '1' and then play with left and right arrows, and 'space' to shoot. Enjoy!");
+
     let (sender, receiver): (Sender<Message>, Receiver<Message>)  = mpsc::channel();
     let sound = Sound::new(receiver);
     let mut sounds: HashSet<SoundType> = HashSet::new();
@@ -164,7 +166,7 @@ pub fn run_minifb() {
             }
             if (on && ! is_playing) || (!on && is_playing) {
                 match sender.send(Message { sound_type, on }) {
-                    Ok(_) => { println!("Sound sent") }
+                    Ok(_) => { }
                     Err(e) => { println!("Err: {e}") }
                 }
             }
