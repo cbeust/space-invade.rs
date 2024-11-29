@@ -28,16 +28,19 @@ impl Mapping {
 }
 
 pub fn run_minifb() {
-    let mut key_mappings: HashMap<Key, Mapping> = HashMap::new();
-    key_mappings.insert(Key::C, Mapping::new(1, 0)); // Insert coin
-    key_mappings.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
-    key_mappings.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
-    key_mappings.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
-    key_mappings.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
-    key_mappings.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
-    key_mappings.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
-    key_mappings.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
-    key_mappings.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+    let key_mappings = {
+        let mut m: HashMap <Key, Mapping > = HashMap::new();
+        m.insert(Key::C, Mapping::new(1, 0)); // Insert coin
+        m.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
+        m.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
+        m.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
+        m.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
+        m.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
+        m.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
+        m.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
+        m.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+        m
+    };
 
     println!("Press 'c', '1' and then play with left and right arrows, and 'space' to shoot. Enjoy!");
 
