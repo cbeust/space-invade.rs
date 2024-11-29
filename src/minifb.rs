@@ -27,6 +27,18 @@ impl Mapping {
     fn new(input_channel: u8, bit: u8) -> Self { Self { input_channel, bit }}
 }
 
+struct SoundInfo {
+    out_channel: u8,
+    bit: u8,
+    sound_type: SoundType,
+}
+
+impl SoundInfo {
+    fn new(out_channel: u8, bit: u8, sound_type: SoundType) -> Self {
+        Self { out_channel, bit, sound_type }
+    }
+}
+
 pub fn run_minifb() {
     let key_mappings = {
         let mut m: HashMap <Key, Mapping > = HashMap::new();
@@ -179,18 +191,18 @@ pub fn run_minifb() {
 
         {
             let state = shared_state.lock().unwrap();
-            for i in &[
-                (state.get_out_3(), 0, SoundType::Ufo),
-                (state.get_out_3(), 1, SoundType::Fire),
-                (state.get_out_3(), 2, SoundType::PlayerDies),
-                (state.get_out_3(), 3, SoundType::InvaderDies),
-                (state.get_out_5(), 0, SoundType::Invader1),
-                (state.get_out_5(), 1, SoundType::Invader2),
-                (state.get_out_5(), 2, SoundType::Invader3),
-                (state.get_out_5(), 3, SoundType::Invader4),
-                (state.get_out_5(), 4, SoundType::UfoHit),
+            for sd in &[
+                SoundInfo::new(3, 0, SoundType::Ufo),
+                SoundInfo::new(3, 1, SoundType::Fire),
+                SoundInfo::new(3, 2, SoundType::PlayerDies),
+                SoundInfo::new(3, 3, SoundType::InvaderDies),
+                SoundInfo::new(5, 0, SoundType::Invader1),
+                SoundInfo::new(5, 1, SoundType::Invader2),
+                SoundInfo::new(5, 2, SoundType::Invader3),
+                SoundInfo::new(5, 3, SoundType::Invader4),
+                SoundInfo::new(5, 4, SoundType::UfoHit),
             ] {
-                update_sound(i.0, i.1, i.2)
+                update_sound(state.get_out(sd.out_channel), sd.bit, sd.sound_type)
             }
         }
 

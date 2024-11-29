@@ -60,15 +60,18 @@ impl SharedState {
     ///  bit 3=Invader die          SX3 3.raw
     ///  bit 4=Extended play        SX4
     ///  bit 5= AMP enable          SX5
-    pub fn get_out_3(&self) -> u8 { self.out_3 }
-
+    ///
     /// Port 5:
     ///  bit 0=Fleet movement 1     SX6 4.raw
     ///  bit 1=Fleet movement 2     SX7 5.raw
     ///  bit 2=Fleet movement 3     SX8 6.raw
     ///  bit 3=Fleet movement 4     SX9 7.raw
     ///  bit 4=UFO Hit              SX10 8.raw
-    pub fn get_out_5(&self) -> u8 { self.out_5 }
+    pub fn get_out(&self, channel: u8) -> u8 {
+        if channel == 3 { self.out_3 }
+        else if channel == 5 { self.out_5 }
+        else { panic!(format!("Unknown out channel: {channel}")); }
+    }
 
     pub fn set_bit_in_1(&mut self, bit: u8, value: bool) {
         let mask = 1 << bit;
