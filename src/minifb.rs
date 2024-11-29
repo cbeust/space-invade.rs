@@ -18,39 +18,38 @@ const GREEN: u32 = 0x0000ff00;
 const WHITE: u32 = 0xffffff;
 const BLACK: u32 = 0;
 
-struct Mapping {
-    input_channel: u8,
+struct ChannelBit {
+    channel: u8,
     bit: u8,
 }
 
-impl Mapping {
-    fn new(input_channel: u8, bit: u8) -> Self { Self { input_channel, bit }}
+impl ChannelBit {
+    fn new(channel: u8, bit: u8) -> Self { Self { channel, bit }}
 }
 
 struct SoundInfo {
-    out_channel: u8,
-    bit: u8,
+    mapping: ChannelBit,
     sound_type: SoundType,
 }
 
 impl SoundInfo {
     fn new(out_channel: u8, bit: u8, sound_type: SoundType) -> Self {
-        Self { out_channel, bit, sound_type }
+        Self { mapping: ChannelBit::new(out_channel, bit), sound_type }
     }
 }
 
 pub fn run_minifb() {
     let key_mappings = {
-        let mut m: HashMap <Key, Mapping > = HashMap::new();
-        m.insert(Key::C, Mapping::new(1, 0)); // Insert coin
-        m.insert(Key::Key2, Mapping::new(1, 1)); // 2 players
-        m.insert(Key::Key1, Mapping::new(1, 2)); // 1 player
-        m.insert(Key::Space, Mapping::new(1, 4)); // Player 1 shoots
-        m.insert(Key::Left, Mapping::new(1, 5)); // Player 1 moves left
-        m.insert(Key::Right, Mapping::new(1, 6)); // Player 1 moves right
-        m.insert(Key::S, Mapping::new(2, 4)); // Player 2 shoots
-        m.insert(Key::A, Mapping::new(2, 5)); // Player 2 moves left
-        m.insert(Key::D, Mapping::new(2, 6)); // Player 2 moves right
+        let mut m: HashMap <Key, ChannelBit> = HashMap::new();
+        m.insert(Key::C, ChannelBit::new(1, 0)); // Insert coin
+        m.insert(Key::Key2, ChannelBit::new(1, 1)); // 2 players
+        m.insert(Key::Key1, ChannelBit::new(1, 2)); // 1 player
+        m.insert(Key::Space, ChannelBit::new(1, 4)); // Player 1 shoots
+        m.insert(Key::Left, ChannelBit::new(1, 5)); // Player 1 moves left
+        m.insert(Key::Right, ChannelBit::new(1, 6)); // Player 1 moves right
+        m.insert(Key::S, ChannelBit::new(2, 4)); // Player 2 shoots
+        m.insert(Key::A, ChannelBit::new(2, 5)); // Player 2 moves left
+        m.insert(Key::D, ChannelBit::new(2, 6)); // Player 2 moves right
         m
     };
 
@@ -91,7 +90,7 @@ pub fn run_minifb() {
         let update_state = |key: Key, bit: bool| {
             if let Some(mapping) = key_mappings.get(&key) {
                 let state = &mut shared_state.lock().unwrap();
-                if mapping.input_channel == 1 {
+                if mapping. channel == 1 {
                     state.set_bit_in_1(mapping.bit, bit);
                 } else {
                     state.set_bit_in_2(mapping.bit, bit);
@@ -202,7 +201,7 @@ pub fn run_minifb() {
                 SoundInfo::new(5, 3, SoundType::Invader4),
                 SoundInfo::new(5, 4, SoundType::UfoHit),
             ] {
-                update_sound(state.get_out(sd.out_channel), sd.bit, sd.sound_type)
+                update_sound(state.get_out(sd.mapping.channel), sd.mapping.bit, sd.sound_type)
             }
         }
 
