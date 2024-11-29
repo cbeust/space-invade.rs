@@ -169,7 +169,7 @@ pub fn run_minifb() {
                 sounds.remove(&sound2);
             }
             // If the status of that sound changed, let the sound thread know
-            if (on && ! is_playing) || (! on && is_playing) {
+            if on ^ is_playing {
                 match sender.send(Message { sound_type, on }) {
                     Ok(_) => { }
                     Err(e) => { println!("Err: {e}") }
