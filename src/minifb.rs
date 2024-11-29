@@ -11,33 +11,6 @@ use emulator::memory::GRAPHIC_MEMORY_SIZE;
 
 use crate::sounds::{Message, Sound, SoundType};
 
-const MAGNIFICATION: usize = 1;
-
-const RED: u32 = 0x00ff0000;
-const GREEN: u32 = 0x0000ff00;
-const WHITE: u32 = 0xffffff;
-const BLACK: u32 = 0;
-
-struct ChannelBit {
-    channel: u8,
-    bit: u8,
-}
-
-impl ChannelBit {
-    fn new(channel: u8, bit: u8) -> Self { Self { channel, bit }}
-}
-
-struct SoundInfo {
-    mapping: ChannelBit,
-    sound_type: SoundType,
-}
-
-impl SoundInfo {
-    fn new(out_channel: u8, bit: u8, sound_type: SoundType) -> Self {
-        Self { mapping: ChannelBit::new(out_channel, bit), sound_type }
-    }
-}
-
 pub fn run_minifb() {
     let key_mappings = {
         let mut m: HashMap <Key, ChannelBit> = HashMap::new();
@@ -70,12 +43,7 @@ pub fn run_minifb() {
 
     let mut options = WindowOptions::default();
     options.resize = true;
-    let mut window = Window::new(
-        "Test - ESC to exit",
-        width * 3,
-        height * 3,
-        options
-    )
+    let mut window = Window::new("space-invade.rs", width * 3, height * 3, options)
         .unwrap_or_else(|e| {
             panic!("{}", e);
         });
@@ -90,7 +58,7 @@ pub fn run_minifb() {
         let update_state = |key: Key, bit: bool| {
             if let Some(mapping) = key_mappings.get(&key) {
                 let state = &mut shared_state.lock().unwrap();
-                if mapping. channel == 1 {
+                if mapping.channel == 1 {
                     state.set_bit_in_1(mapping.bit, bit);
                 } else {
                     state.set_bit_in_2(mapping.bit, bit);
@@ -215,5 +183,32 @@ pub fn run_minifb() {
             last_title_update = SystemTime::now();
         }
     }
-
 }
+
+const MAGNIFICATION: usize = 1;
+
+const RED: u32 = 0x00ff0000;
+const GREEN: u32 = 0x0000ff00;
+const WHITE: u32 = 0xffffff;
+const BLACK: u32 = 0;
+
+struct ChannelBit {
+    channel: u8,
+    bit: u8,
+}
+
+impl ChannelBit {
+    fn new(channel: u8, bit: u8) -> Self { Self { channel, bit }}
+}
+
+struct SoundInfo {
+    mapping: ChannelBit,
+    sound_type: SoundType,
+}
+
+impl SoundInfo {
+    fn new(out_channel: u8, bit: u8, sound_type: SoundType) -> Self {
+        Self { mapping: ChannelBit::new(out_channel, bit), sound_type }
+    }
+}
+
