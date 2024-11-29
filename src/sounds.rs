@@ -5,7 +5,7 @@ use std::sync::mpsc::Receiver;
 
 use rodio::{Decoder, OutputStream, Sink};
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SoundType {
     Fire,
     InvaderDies,

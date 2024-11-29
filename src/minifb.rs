@@ -158,16 +158,18 @@ pub fn run_minifb() {
         //
         // Process sounds
         //
-        let mut maybe_send = |value: u8, bit: u8, sound_type: SoundType| {
+        let mut update_sound = |value: u8, bit: u8, sound_type: SoundType| {
             let sound2 = sound_type.clone();
             let is_playing = sounds.contains(&sound2);
             let on = (value & (1 << bit)) != 0;
+            // Update our internal table to keep track of which sounds are currently playing
             if on {
                 sounds.insert(sound2);
             } else {
                 sounds.remove(&sound2);
             }
-            if (on && ! is_playing) || (!on && is_playing) {
+            // If the status of that sound changed, let the sound thread know
+            if (on && ! is_playing) || (! on && is_playing) {
                 match sender.send(Message { sound_type, on }) {
                     Ok(_) => { }
                     Err(e) => { println!("Err: {e}") }
@@ -175,17 +177,22 @@ pub fn run_minifb() {
             }
         };
 
-        maybe_send(shared_state.lock().unwrap().get_out_3(), 0, SoundType::Ufo);
-        maybe_send(shared_state.lock().unwrap().get_out_3(), 1, SoundType::Fire);
-        maybe_send(shared_state.lock().unwrap().get_out_3(), 2, SoundType::PlayerDies);
-        maybe_send(shared_state.lock().unwrap().get_out_3(), 3, SoundType::InvaderDies);
-
-        maybe_send(shared_state.lock().unwrap().get_out_5(), 0, SoundType::Invader1);
-        maybe_send(shared_state.lock().unwrap().get_out_5(), 1, SoundType::Invader2);
-        maybe_send(shared_state.lock().unwrap().get_out_5(), 2, SoundType::Invader3);
-        maybe_send(shared_state.lock().unwrap().get_out_5(), 3, SoundType::Invader4);
-        maybe_send(shared_state.lock().unwrap().get_out_5(), 4, SoundType::UfoHit);
-
+        {
+            let state = shared_state.lock().unwrap();
+            for i in &[
+                (state.get_out_3(), 0, SoundType::Ufo),
+                (state.get_out_3(), 1, SoundType::Fire),
+                (state.get_out_3(), 2, SoundType::PlayerDies),
+                (state.get_out_3(), 3, SoundType::InvaderDies),
+                (state.get_out_5(), 0, SoundType::Invader1),
+                (state.get_out_5(), 1, SoundType::Invader2),
+                (state.get_out_5(), 2, SoundType::Invader3),
+                (state.get_out_5(), 3, SoundType::Invader4),
+                (state.get_out_5(), 4, SoundType::UfoHit),
+            ] {
+                update_sound(i.0, i.1, i.2)
+            }
+        }
 
         if last_title_update.elapsed().unwrap().gt(&Duration::from_millis(1000)) {
             let paused = if shared_state.lock().unwrap().is_paused() { " - Paused" } else { "" };
