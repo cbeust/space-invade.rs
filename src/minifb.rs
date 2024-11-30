@@ -9,7 +9,7 @@ use minifb::{Key, KeyRepeat, Window, WindowOptions};
 use emulator::emulator::{HEIGHT, WIDTH};
 use emulator::memory::GRAPHIC_MEMORY_SIZE;
 
-use crate::sounds::{Message, Sound, SoundType};
+use crate::sounds::{ALL_SOUNDS, Message, Sound, SoundType};
 
 pub fn run_minifb() {
     let key_mappings = {
@@ -158,18 +158,8 @@ pub fn run_minifb() {
 
         {
             let state = shared_state.lock().unwrap();
-            for sd in &[
-                SoundInfo::new(3, 0, SoundType::Ufo),
-                SoundInfo::new(3, 1, SoundType::Fire),
-                SoundInfo::new(3, 2, SoundType::PlayerDies),
-                SoundInfo::new(3, 3, SoundType::InvaderDies),
-                SoundInfo::new(5, 0, SoundType::Invader1),
-                SoundInfo::new(5, 1, SoundType::Invader2),
-                SoundInfo::new(5, 2, SoundType::Invader3),
-                SoundInfo::new(5, 3, SoundType::Invader4),
-                SoundInfo::new(5, 4, SoundType::UfoHit),
-            ] {
-                update_sound(state.get_out(sd.mapping.channel), sd.mapping.bit, sd.sound_type)
+            for sd in ALL_SOUNDS.iter() {
+                update_sound(state.get_out(sd.channel_bit.channel), sd.channel_bit.bit, sd.sound_type)
             }
         }
 
@@ -192,23 +182,11 @@ const GREEN: u32 = 0x0000ff00;
 const WHITE: u32 = 0xffffff;
 const BLACK: u32 = 0;
 
-struct ChannelBit {
-    channel: u8,
-    bit: u8,
+pub struct ChannelBit {
+    pub channel: u8,
+    pub bit: u8,
 }
 
 impl ChannelBit {
     fn new(channel: u8, bit: u8) -> Self { Self { channel, bit }}
 }
-
-struct SoundInfo {
-    mapping: ChannelBit,
-    sound_type: SoundType,
-}
-
-impl SoundInfo {
-    fn new(out_channel: u8, bit: u8, sound_type: SoundType) -> Self {
-        Self { mapping: ChannelBit::new(out_channel, bit), sound_type }
-    }
-}
-

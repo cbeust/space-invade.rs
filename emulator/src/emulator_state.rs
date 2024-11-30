@@ -70,7 +70,7 @@ impl SharedState {
     pub fn get_out(&self, channel: u8) -> u8 {
         if channel == 3 { self.out_3 }
         else if channel == 5 { self.out_5 }
-        else { panic!(format!("Unknown out channel: {channel}")); }
+        else { panic!("Unknown out channel: {}", channel); }
     }
 
     pub fn set_bit_in_1(&mut self, bit: u8, value: bool) {
