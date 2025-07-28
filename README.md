@@ -63,10 +63,6 @@ can animate its graphics, so the designers created a multiple bit shifter outsid
 and hooked it up with its `input` and `output` instructions. Refer to the detailed architecture (or the code) to
 understand how this works, but I thought this was another very clever design around hardware limitations of the time.
 
-The main logic is in the file [`sdl2.rs`](https://github.com/cbeust/space-invade.rs/blob/main/src/sdl2.rs), which 
-spawns the emulator in a separate thread. That thread updates the graphic memory which the SDL 2 main loop uses
-to draw the graphics on the main screen.
-
 The emulator is calibrated to run at 2Mhz with the following logic, which you will find in the [`run_one_frame()`](https://github.com/cbeust/space-invade.rs/blob/main/emulator/src/emulator.rs#L143-L157) function:
 
 - Run as many cycles as necessary to reach the first half of the screen (about 16,500)
