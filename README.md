@@ -87,8 +87,8 @@ if you find a bug in my timing routine that might explain my impression.
 
 ### `cpudiag` is not enough.
 
-When I wrote my Apple ][ emulator, I first developed the 6502 emulator with a diagnostic file that was extremely
-thorough, and which gave me a pretty much 100% guarantee that once all these tests pass, my 6502 is flawless
+When I wrote my Apple ][ emulator, I first developed the 6502 emulator with the guidance of the [6502 Single Step Tests](https://github.com/SingleStepTests/65x02/tree/main/6502), which gave me a pretty strong guarantee that once all these tests pass,
+my 6502 is flawless
 and I can now focus on the Apple ][ part without worrying about CPU bugs. I started this project with the
 same assumption and it was a mistake. Deep into the development, I was displaying graphics that made no sense
 and after hours of disassembling and understanding what the 8080 code actually does, I ended up finding
